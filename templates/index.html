@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseAI — Club Management Agent</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-bottom: 1px solid #2d3748;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .logo h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo p {
+            font-size: 11px;
+            color: #718096;
+            margin-top: 1px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #68d391;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #68d391;
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.3
+            }
+        }
+
+        /* ── LAYOUT ── */
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            height: calc(100vh - 73px);
+        }
+
+        /* ── LEFT PANEL ── */
+        .command-center {
+            padding: 24px;
+            overflow-y: auto;
+            border-right: 1px solid #1a202c;
+        }
+
+        .input-section {
+            background: #111827;
+            border: 1px solid #2d3748;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .instruction-textarea {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid #2d3748;
+            border-radius: 10px;
+            color: #e2e8f0;
+            font-size: 15px;
+            padding: 14px 16px;
+            resize: none;
+            height: 90px;
+            font-family: inherit;
+            line-height: 1.5;
+            transition: border-color 0.2s;
+        }
+
+        .instruction-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .instruction-textarea::placeholder {
+            color: #4a5568;
+        }
+
+        .btn-run {
+            width: 100%;
+            margin-top: 12px;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-run:hover {
+            opacity: 0.9;
+        }
+
+        .btn-run:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .example-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .chip {
+            font-size: 11px;
+            padding: 5px 10px;
+            background: #1a202c;
+            border: 1px solid #2d3748;
+            border-radius: 20px;
+            color: #718096;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chip:hover {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-color: #667eea;
+        }
+
+        /* ── THINKING BAR ── */
+        .thinking-bar {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: #1a1a2e;
+            border: 1px solid #667eea33;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #667eea;
+        }
+
+        .thinking-bar.visible {
+            display: flex;
+        }
+
+        .dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .dot:nth-child(2) {
+            animation-delay: .2s
+        }
+
+        .dot:nth-child(3) {
+            animation-delay: .4s
+        }
+
+        @keyframes bounce {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0.6);
+                opacity: 0.4
+            }
+
+            40% {
+                transform: scale(1);
+                opacity: 1
+            }
+        }
+
+        /* ── ACTIVITY LOG ── */
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .activity-log {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 280px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .activity-item {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-left: 3px solid #667eea;
+            border-radius: 8px;
+            padding: 10px 14px;
+            animation: slide-in 0.3s ease;
+        }
+
+        .activity-item.tool {
+            border-left-color: #f6ad55;
+        }
+
+        .activity-item.success {
+            border-left-color: #68d391;
+        }
+
+        .activity-item.reminder {
+            border-left-color: #fc8181;
+        }
+
+        .activity-item.rsvp {
+            border-left-color: #76e4f7;
+        }
+
+        .activity-item.error {
+            border-left-color: #f56565;
+        }
+
+        @keyframes slide-in {
+            from {
+                opacity: 0;
+                transform: translateY(-8px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .activity-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+
+        .activity-type {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .activity-time {
+            font-size: 11px;
+            color: #4a5568;
+            font-family: monospace;
+        }
+
+        .activity-text {
+            font-size: 13px;
+            color: #a0aec0;
+            line-height: 1.4;
+        }
+
+        /* ── EVENTS BOARD ── */
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 12px;
+        }
+
+        .event-card {
+            background: #111827;
+            border: 1px solid #2d3748;
+            border-radius: 12px;
+            padding: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .event-card:hover {
+            border-color: #667eea;
+        }
+
+        .event-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .event-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e2e8f0;
+            flex: 1;
+        }
+
+        .event-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            background: #1a3a2a;
+            color: #68d391;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .event-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .event-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #718096;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            background: #0d1117;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-bar {
+            display: flex;
+            border-bottom: 1px solid #1a202c;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            transition: color 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* ── MEMBERS ── */
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            transition: background 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .member-item:hover {
+            background: #1a202c;
+        }
+
+        .member-item.notified {
+            background: #1a2a1a;
+            border-color: #2d5a2d;
+        }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .member-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .member-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #e2e8f0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .member-email {
+            font-size: 11px;
+            color: #4a5568;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .member-role {
+            font-size: 10px;
+            padding: 2px 6px;
+            background: #1a3a2a;
+            color: #68d391;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+        /* ── RSVP ── */
+        .rsvp-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .rsvp-stat {
+            background: #111827;
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .rsvp-number {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .rsvp-number.yes {
+            color: #68d391;
+        }
+
+        .rsvp-number.no {
+            color: #fc8181;
+        }
+
+        .rsvp-label {
+            font-size: 11px;
+            color: #718096;
+            margin-top: 2px;
+        }
+
+        /* ── NOTIFICATION POPUP ── */
+        #notif-area {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 360px;
+        }
+
+        .notif-popup {
+            background: #1a1a2e;
+            border: 1px solid #667eea;
+            border-radius: 12px;
+            padding: 14px 16px;
+            animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+        }
+
+        .notif-popup.reminder {
+            border-color: #fc8181;
+            box-shadow: 0 8px 32px rgba(252, 129, 129, 0.3);
+        }
+
+        .notif-popup.error {
+            border-color: #f56565;
+            box-shadow: 0 8px 32px rgba(245, 101, 101, 0.3);
+        }
+
+        @keyframes pop-in {
+            from {
+                opacity: 0;
+                transform: translateX(100px) scale(0.8)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1)
+            }
+        }
+
+        .notif-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #667eea;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .notif-popup.reminder .notif-title {
+            color: #fc8181;
+        }
+
+        .notif-popup.error .notif-title {
+            color: #f56565;
+        }
+
+        .notif-body {
+            font-size: 13px;
+            color: #e2e8f0;
+            line-height: 1.4;
+        }
+
+        /* ── EMPTY STATE ── */
+        .empty {
+            text-align: center;
+            padding: 32px 16px;
+            color: #4a5568;
+        }
+
+        .empty-icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        .empty-text {
+            font-size: 13px;
+        }
+
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2d3748;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">⚡</div>
+            <div>
+                <h1>PulseAI</h1>
+                <p>Autonomous Club Management Agent — Fordham University</p>
+            </div>
+        </div>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span id="conn-status">Connecting...</span>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- LEFT -->
+        <div class="command-center">
+
+            <!-- INPUT -->
+            <div class="input-section">
+                <div class="input-label">⚡ President's Command</div>
+                <textarea id="instruction" class="instruction-textarea"
+                    placeholder="We have a Finance Club meeting next Thursday at 7pm in Hughes Hall 301, remind members 24 hours before and again 1 hour before, and ask anyone who can't make it to let us know"></textarea>
+                <button class="btn-run" id="run-btn" onclick="runAgent()">
+                    ▶&nbsp; Run Agent
+                </button>
+                <div class="example-chips">
+                    <div class="chip" onclick="setExample(0)">📅 Weekly meeting</div>
+                    <div class="chip" onclick="setExample(1)">🎉 Welcome social</div>
+                    <div class="chip" onclick="setExample(2)">📊 Budget review</div>
+                </div>
+            </div>
+
+            <!-- THINKING -->
+            <div class="thinking-bar" id="thinking">
+                <div class="dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                <span id="thinking-text">Agent is working...</span>
+            </div>
+
+            <!-- ACTIVITY LOG -->
+            <div style="margin-bottom:20px">
+                <div class="section-title">🤖 Agent Activity</div>
+                <div class="activity-log" id="activity-log">
+                    <div class="empty">
+                        <div class="empty-icon">🤖</div>
+                        <div class="empty-text">Agent actions appear here in real time</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EVENTS -->
+            <div>
+                <div class="section-title">📅 Events Board</div>
+                <div class="events-grid" id="events-grid">
+                    <div class="empty">
+                        <div class="empty-icon">📅</div>
+                        <div class="empty-text">Events appear after the agent creates them</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="tab-bar">
+                <button class="tab active" onclick="switchTab('members', this)">Members</button>
+                <button class="tab" onclick="switchTab('rsvp', this)">RSVPs</button>
+                <button class="tab" onclick="switchTab('log', this)">Log</button>
+            </div>
+            <div class="sidebar-content">
+
+                <!-- MEMBERS TAB -->
+                <div class="tab-pane active" id="tab-members">
+                    <div id="members-list">
+                        <div class="empty">
+                            <div class="empty-icon">👥</div>
+                            <div class="empty-text">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RSVP TAB -->
+                <div class="tab-pane" id="tab-rsvp">
+                    <div class="rsvp-stats">
+                        <div class="rsvp-stat">
+                            <div class="rsvp-number yes" id="rsvp-yes">0</div>
+                            <div class="rsvp-label">Attending</div>
+                        </div>
+                        <div class="rsvp-stat">
+                            <div class="rsvp-number no" id="rsvp-no">0</div>
+                            <div class="rsvp-label">Can't Make It</div>
+                        </div>
+                    </div>
+                    <div id="rsvp-list">
+                        <div class="empty">
+                            <div class="empty-icon">📋</div>
+                            <div class="empty-text">RSVPs appear after agent opens collection</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LOG TAB -->
+                <div class="tab-pane" id="tab-log">
+                    <div id="raw-log" style="font-size:11px;color:#4a5568;font-family:monospace;line-height:1.7">
+                        Waiting for agent...
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION AREA -->
+    <div id="notif-area"></div>
+
+    <script>
+        // ── CONSTANTS ────────────────────────────────────────────────────────
+        const AVATAR_COLORS = [
+            '#667eea', '#764ba2', '#f093fb', '#f6d365', '#fda085',
+            '#96fbc4', '#4facfe', '#43e97b', '#fa709a', '#fee140'
+        ];
+
+        const EXAMPLES = [
+            "Finance Club budget review next Thursday at 7pm in Hughes Hall 301. Remind members 24 hours before and 1 hour before. Ask who can't make it to RSVP.",
+            "Welcome social for new members this Friday at 6pm in the Alumni Lounge. Notify everyone and collect RSVPs so we know how many to expect.",
+            "Mandatory exec board budget review tomorrow at 3pm in the treasurer's office. Remind everyone 2 hours before. Collect RSVPs."
+        ];
+
+        // ── SOCKET SETUP ─────────────────────────────────────────────────────
+        const socket = io();
+        const notifiedEmails = new Set();
+
+        socket.on('connect', () => {
+            document.getElementById('conn-status').textContent = 'Agent Online';
+        });
+        socket.on('disconnect', () => {
+            document.getElementById('conn-status').textContent = 'Disconnected';
+        });
+
+        // ── AGENT EVENTS ─────────────────────────────────────────────────────
+        // Pattern mirrors PostToolUse hook from hooks.py — every action gets
+        // logged and displayed so judges can see the agent loop in real time.
+
+        socket.on('agent_action', ({ type, data, timestamp }) => {
+            console.log('agent_action:', type, data);
+
+            switch (type) {
+
+                case 'agent_started':
+                    showThinking('Planning actions...');
+                    addActivity('🤖 Agent Started', data.message, 'default', timestamp);
+                    log(`[${timestamp}] STARTED: ${data.input}`);
+                    break;
+
+                case 'tool_called':
+                    showThinking(`Calling ${data.tool}...`);
+                    addActivity(`🔧 ${data.tool}`, JSON.stringify(data.input).slice(0, 120), 'tool', timestamp);
+                    log(`[${timestamp}] TOOL CALL: ${data.tool}(${JSON.stringify(data.input)})`);
+                    break;
+
+                case 'tool_success':
+                    addActivity(`✅ ${data.tool}`, data.message, 'success', timestamp);
+                    log(`[${timestamp}] SUCCESS: ${data.tool} → ${data.message}`);
+                    break;
+
+                case 'tool_error':
+                    addActivity(`❌ ${data.tool}`, data.error, 'error', timestamp);
+                    log(`[${timestamp}] ERROR: ${data.tool} → ${data.error}`);
+                    break;
+
+                case 'event_created':
+                    addActivity('📅 Event Created', `"${data.title}" on ${data.date} at ${data.time} in ${data.location}`, 'success', timestamp);
+                    addEventCard(data);
+                    popup('📅 Event Created', `"${data.title}" — ${data.date} at ${data.time}`, 'default');
+                    loadEvents();
+                    log(`[${timestamp}] EVENT #${data.event_id}: ${data.title}`);
+                    break;
+
+                case 'member_notified':
+                    notifiedEmails.add(data.member_email);
+                    markMemberNotified(data.member_email);
+                    log(`[${timestamp}] NOTIFIED: ${data.member_name}`);
+                    break;
+
+                case 'conflicts_checked':
+                    const msg = data.conflicts_found > 0
+                        ? `⚠️ ${data.conflicts_found} conflict(s) found`
+                        : '✅ No conflicts found';
+                    addActivity('🔍 Conflicts Checked', msg, 'default', timestamp);
+                    log(`[${timestamp}] CONFLICTS: ${data.conflicts_found}`);
+                    break;
+
+                case 'reminder_scheduled':
+                    addActivity('⏰ Reminder Scheduled', `"${data.message}" — fires at ${data.fires_at}`, 'reminder', timestamp);
+                    popup('⏰ Reminder Scheduled', `Fires at ${data.fires_at} (demo: 30s)`, 'default');
+                    log(`[${timestamp}] REMINDER: ${data.job_id} at ${data.fires_at}`);
+                    break;
+
+                case 'rsvp_opened':
+                    addActivity('📋 RSVP Opened', `Collecting from ${data.member_count} members for "${data.event_title}"`, 'rsvp', timestamp);
+                    popup('📋 RSVP Collection Open', `Members can now respond for "${data.event_title}"`, 'default');
+                    log(`[${timestamp}] RSVP OPEN: event #${data.event_id}`);
+                    break;
+
+                case 'rsvp_summary':
+                    document.getElementById('rsvp-yes').textContent = data.attending;
+                    document.getElementById('rsvp-no').textContent = data.not_attending;
+                    log(`[${timestamp}] RSVP SUMMARY: ${data.attending} attending`);
+                    break;
+
+                case 'agent_complete':
+                    hideThinking();
+                    addActivity('🎉 Complete', `${data.tools_called} tools called in ${data.iterations} iteration(s). ${data.summary.slice(0, 150)}`, 'success', timestamp);
+                    popup('🎉 Agent Complete', `${data.tools_called} tools executed autonomously`, 'default');
+                    log(`[${timestamp}] COMPLETE: ${data.iterations} iterations, ${data.tools_called} tools`);
+                    resetBtn();
+                    break;
+
+                case 'agent_error':
+                    hideThinking();
+                    addActivity('❌ Error', data.message, 'error', timestamp);
+                    popup('❌ Agent Error', data.message, 'error');
+                    log(`[${timestamp}] ERROR: ${data.message}`);
+                    resetBtn();
+                    break;
+            }
+        });
+
+        // Reminder fires automatically from APScheduler — no human trigger
+        socket.on('reminder_fired', (data) => {
+            addActivity('🔔 REMINDER FIRED', `Sent to ${data.member_count} members: "${data.message}"`, 'reminder', data.timestamp);
+            popup('🔔 Reminder Fired!', data.message, 'reminder');
+            log(`[${data.timestamp}] REMINDER FIRED: ${data.job_id}`);
+        });
+
+        // Live RSVP updates
+        socket.on('rsvp_update', (data) => {
+            document.getElementById('rsvp-yes').textContent = data.attending;
+            document.getElementById('rsvp-no').textContent = data.not_attending;
+            addActivity('📋 RSVP Received', `${data.latest_name} responded. ${data.attending} attending so far.`, 'rsvp', new Date().toLocaleTimeString());
+            log(`[RSVP] ${data.latest_name} responded`);
+        });
+
+        // ── UI FUNCTIONS ──────────────────────────────────────────────────────
+
+        function runAgent() {
+            const input = document.getElementById('instruction').value.trim();
+            if (!input) { alert('Enter an instruction for the agent.'); return; }
+
+            document.getElementById('activity-log').innerHTML = '';
+            notifiedEmails.clear();
+
+            const btn = document.getElementById('run-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳  Agent Running...';
+            showThinking('Starting agent...');
+
+            fetch('/api/run-agent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ instruction: input })
+            })
+                .then(r => r.json())
+                .then(d => console.log('Agent kicked off:', d))
+                .catch(err => {
+                    console.error(err);
+                    hideThinking(); resetBtn();
+                    alert('Error starting agent. Check console.');
+                });
+        }
+
+        function addActivity(title, text, type, timestamp) {
+            const log = document.getElementById('activity-log');
+            const empty = log.querySelector('.empty');
+            if (empty) empty.remove();
+
+            const colors = {
+                tool: '#f6ad55', success: '#68d391',
+                reminder: '#fc8181', rsvp: '#76e4f7',
+                error: '#f56565', default: '#667eea'
+            };
+
+            const item = document.createElement('div');
+            item.className = `activity-item ${type}`;
+            item.innerHTML = `
+    <div class="activity-header">
+      <span class="activity-type" style="color:${colors[type] || colors.default}">${esc(title)}</span>
+      <span class="activity-time">${timestamp || ''}</span>
+    </div>
+    <div class="activity-text">${esc(text)}</div>
+  `;
+            log.prepend(item);
+        }
+
+        function addEventCard(event) {
+            const grid = document.getElementById('events-grid');
+            const empty = grid.querySelector('.empty');
+            if (empty) empty.remove();
+
+            const card = document.createElement('div');
+            card.className = 'event-card';
+            card.id = `event-${event.event_id}`;
+            card.innerHTML = `
+    <div class="event-card-header">
+      <div class="event-title">${esc(event.title)}</div>
+      <div class="event-badge">ACTIVE</div>
+    </div>
+    <div class="event-meta">
+      <div class="event-meta-item">📅 ${esc(event.date)}</div>
+      <div class="event-meta-item">🕐 ${esc(event.time)}</div>
+      <div class="event-meta-item">📍 ${esc(event.location)}</div>
+    </div>
+  `;
+            grid.prepend(card);
+        }
+
+        function markMemberNotified(email) {
+            document.querySelectorAll('.member-item').forEach(el => {
+                if (el.dataset.email === email) {
+                    el.classList.add('notified');
+                    const role = el.querySelector('.member-role');
+                    if (role) role.textContent = '✓ Notified';
+                }
+            });
+        }
+
+        function popup(title, body, type) {
+            const area = document.getElementById('notif-area');
+            const el = document.createElement('div');
+            el.className = `notif-popup ${type}`;
+            el.innerHTML = `<div class="notif-title">${title}</div><div class="notif-body">${esc(body)}</div>`;
+            area.prepend(el);
+            setTimeout(() => {
+                el.style.transition = 'opacity 0.5s';
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 500);
+            }, 5000);
+        }
+
+        function showThinking(text) {
+            document.getElementById('thinking').classList.add('visible');
+            document.getElementById('thinking-text').textContent = text;
+        }
+        function hideThinking() {
+            document.getElementById('thinking').classList.remove('visible');
+        }
+        function resetBtn() {
+            const btn = document.getElementById('run-btn');
+            btn.disabled = false;
+            btn.innerHTML = '▶&nbsp; Run Agent';
+        }
+        function log(text) {
+            const el = document.getElementById('raw-log');
+            if (el.textContent === 'Waiting for agent...') el.textContent = '';
+            el.textContent += text + '\n';
+            el.scrollTop = el.scrollHeight;
+        }
+        function switchTab(name, btn) {
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${name}`).classList.add('active');
+            btn.classList.add('active');
+        }
+        function setExample(i) {
+            document.getElementById('instruction').value = EXAMPLES[i];
+        }
+        function esc(str) {
+            if (typeof str !== 'string') str = JSON.stringify(str) || '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        // ── LOAD MEMBERS ──────────────────────────────────────────────────────
+
+        function loadMembers() {
+            fetch('/api/members')
+                .then(r => r.json())
+                .then(members => {
+                    const list = document.getElementById('members-list');
+                    list.innerHTML = '';
+                    members.forEach((m, i) => {
+                        const initials = m.name.split(' ').map(n => n[0]).join('');
+                        const color = AVATAR_COLORS[i % AVATAR_COLORS.length];
+                        const div = document.createElement('div');
+                        div.className = 'member-item';
+                        div.dataset.email = m.email;
+                        div.innerHTML = `
+          <div class="avatar" style="background:${color}">${initials}</div>
+          <div class="member-info">
+            <div class="member-name">${esc(m.name)}</div>
+            <div class="member-email">${esc(m.email)}</div>
+          </div>
+          <span class="member-role">${m.role}</span>
+        `;
+                        list.appendChild(div);
+                    });
+                });
+        }
+
+        function loadEvents() {
+            fetch('/api/events')
+                .then(r => r.json())
+                .then(events => {
+                    if (!events.length) return;
+                    const grid = document.getElementById('events-grid');
+                    grid.innerHTML = '';
+                    events.forEach(e => addEventCard({
+                        event_id: e.id, title: e.title,
+                        date: e.date, time: e.time, location: e.location
+                    }));
+                });
+        }
+
+        // ── INIT ──────────────────────────────────────────────────────────────
+        loadMembers();
+        loadEvents();
+    </script>
+</body>
+
+</html>
