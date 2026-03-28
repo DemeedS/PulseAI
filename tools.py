@@ -117,13 +117,14 @@ def impl_notify_members(event_id, message):
     # Send emails — returns counts dict
     subject = f"[PulseAI] {event['title']} — Club Update"
     body    = (
-        f"Hi {{name}},\n\n"
-        f"{message}\n\n"
-        f"Event:    {event['title']}\n"
-        f"Date:     {event['date']} at {event['time']}\n"
-        f"Location: {event['location']}\n\n"
-        f"— PulseAI Club Management"
-    )
+    f"Hi {{name}},\n\n"
+    f"{message}\n\n"
+    f"Event:    {event['title']}\n"
+    f"Date:     {event['date']} at {event['time']}\n"
+    f"Location: {event['location']}\n\n"
+    f"View event & RSVP: https://pulseai-qk01.onrender.com/event/{event['id']}\n\n"
+    f"— PulseAI Club Management"
+)
     email_results = send_bulk_emails(members, subject, body)
 
     # PostToolUse broadcast
@@ -216,14 +217,15 @@ def fire_reminder(event_id, message, job_id):
     event = get_event(event_id)
     if event:
         subject = f"[PulseAI REMINDER] {event['title']}"
-        body = (
-            f"Hi {{name}},\n\n"
-            f"Reminder: {message}\n\n"
-            f"Event:    {event['title']}\n"
-            f"Date:     {event['date']} at {event['time']}\n"
-            f"Location: {event['location']}\n\n"
-            f"— PulseAI"
-        )
+        body    = (
+    f"Hi {{name}},\n\n"
+    f"{message}\n\n"
+    f"Event:    {event['title']}\n"
+    f"Date:     {event['date']} at {event['time']}\n"
+    f"Location: {event['location']}\n\n"
+    f"View event & RSVP: https://pulseai-qk01.onrender.com/event/{event['id']}\n\n"
+    f"— PulseAI Club Management"
+)
         send_bulk_emails(members, subject, body)
 
 
