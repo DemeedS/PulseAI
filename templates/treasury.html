@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treasury — PulseAI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0f;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-bottom: 1px solid #2d3748;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .logo h1 {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back {
+            color: #718096;
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.2s;
+        }
+
+        .back:hover {
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 20px 60px;
+        }
+
+        .budget-hero {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 1px solid #2d3748;
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .budget-hero-bg {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: rgba(102, 126, 234, 0.05);
+            top: -100px;
+            right: -80px;
+        }
+
+        .budget-label {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .budget-amount {
+            font-size: 52px;
+            font-weight: 800;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .budget-amount span.dollar {
+            font-size: 28px;
+            color: #718096;
+        }
+
+        .budget-sub {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 24px;
+        }
+
+        .progress-bar-bg {
+            background: #1a202c;
+            border-radius: 99px;
+            height: 12px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 1s ease;
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .budget-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .bstat {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .bstat-num {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .bstat-num.green {
+            color: #68d391;
+        }
+
+        .bstat-num.red {
+            color: #fc8181;
+        }
+
+        .bstat-num.purple {
+            color: #a78bfa;
+        }
+
+        .bstat-lbl {
+            font-size: 11px;
+            color: #718096;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 14px;
+        }
+
+        .card {
+            background: #111827;
+            border: 1px solid #2d3748;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .inp {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid #2d3748;
+            border-radius: 9px;
+            color: #e2e8f0;
+            font-size: 14px;
+            padding: 11px 13px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .inp:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .inp::placeholder {
+            color: #4a5568;
+        }
+
+        select.inp {
+            cursor: pointer;
+        }
+
+        .btn-log {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-top: 4px;
+        }
+
+        .btn-log:hover {
+            opacity: 0.9;
+        }
+
+        .msg {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+        }
+
+        .msg.ok {
+            background: #1a3a2a;
+            color: #68d391;
+            border: 1px solid #2d5a2d;
+            display: block;
+        }
+
+        .msg.err {
+            background: #2a1a1a;
+            color: #fc8181;
+            border: 1px solid #5a2d2d;
+            display: block;
+        }
+
+        .insight-card {
+            background: linear-gradient(135deg, #1a1a2e, #1a1040);
+            border: 1px solid #667eea33;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .insight-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .insight-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #a78bfa;
+            margin-bottom: 6px;
+        }
+
+        .insight-text {
+            font-size: 13px;
+            color: #a0aec0;
+            line-height: 1.6;
+        }
+
+        .cat-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #1a202c;
+        }
+
+        .cat-item:last-child {
+            border-bottom: none;
+        }
+
+        .cat-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .cat-name {
+            flex: 1;
+            font-size: 14px;
+            color: #e2e8f0;
+        }
+
+        .cat-bar-wrap {
+            width: 120px;
+            background: #1a202c;
+            border-radius: 99px;
+            height: 6px;
+            overflow: hidden;
+        }
+
+        .cat-bar {
+            height: 100%;
+            border-radius: 99px;
+        }
+
+        .cat-amount {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e2e8f0;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        .expense-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #1a202c;
+            animation: slide-in 0.3s ease;
+        }
+
+        .expense-row:last-child {
+            border-bottom: none;
+        }
+
+        @keyframes slide-in {
+            from {
+                opacity: 0;
+                transform: translateY(-6px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .expense-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .expense-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .expense-desc {
+            font-size: 13px;
+            color: #e2e8f0;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .expense-meta {
+            font-size: 11px;
+            color: #718096;
+            margin-top: 2px;
+        }
+
+        .expense-amount {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fc8181;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 32px;
+            color: #4a5568;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">💰</div>
+            <h1>Club Treasury</h1>
+        </div>
+        <a href="/" class="back">← Back to Dashboard</a>
+    </div>
+
+    <div class="container">
+
+        <!-- BUDGET HERO -->
+        <div class="budget-hero">
+            <div class="budget-hero-bg"></div>
+            <div class="budget-label">Semester Budget — Remaining</div>
+            <div class="budget-amount">
+                <span class="dollar">$</span><span id="val-remaining">{{ "%.2f"|format(summary.remaining) }}</span>
+            </div>
+            <div class="budget-sub" id="val-sub">remaining of ${{ "%.2f"|format(summary.budget) }} total budget</div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progress-fill" style="width:{{ summary.percent_used }}%"></div>
+            </div>
+            <div class="progress-labels">
+                <span id="val-spent-lbl">${{ "%.2f"|format(summary.spent) }} spent</span>
+                <span id="val-pct-lbl">{{ summary.percent_used }}% used</span>
+            </div>
+            <div class="budget-stats">
+                <div class="bstat">
+                    <div class="bstat-num green" id="val-budget">${{ "%.2f"|format(summary.budget) }}</div>
+                    <div class="bstat-lbl">Total Budget</div>
+                </div>
+                <div class="bstat">
+                    <div class="bstat-num red" id="val-spent">${{ "%.2f"|format(summary.spent) }}</div>
+                    <div class="bstat-lbl">Total Spent</div>
+                </div>
+                <div class="bstat">
+                    <div class="bstat-num purple" id="val-rem2">${{ "%.2f"|format(summary.remaining) }}</div>
+                    <div class="bstat-lbl">Remaining</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI INSIGHT -->
+        <div class="insight-card">
+            <div class="insight-icon">🤖</div>
+            <div>
+                <div class="insight-title">PulseAI Financial Insight</div>
+                <div class="insight-text" id="ai-insight">
+                    {% if summary.budget == 0 %}
+                    Set your semester budget above to get started. PulseAI will track spending and provide financial
+                    insights automatically.
+                    {% elif summary.percent_used < 40 %} Budget is healthy — {{ summary.percent_used }}% used with
+                        plenty remaining. Consider allocating remaining funds toward a year-end event or speaker series.
+                        {% elif summary.percent_used < 70 %} Budget usage is moderate at {{ summary.percent_used }}%.
+                        Spending is on track. Monitor food and drinks closely — it tends to spike near end of semester.
+                        {% else %} ⚠️ Budget usage is at {{ summary.percent_used }}%. Only ${{ "%.2f"
+                        |format(summary.remaining) }} remaining. Recommend prioritizing essential expenses only. {%
+                        endif %} </div>
+                </div>
+            </div>
+
+            <!-- SET BUDGET -->
+            <div class="section-title">Set Budget</div>
+            <div class="card">
+                <div class="form-row">
+                    <input class="inp" id="budget-input" type="number" placeholder="Enter total semester budget ($)"
+                        min="0" step="0.01" value="{{ '%.2f'|format(summary.budget) if summary.budget > 0 else '' }}">
+                    <button class="btn-log" onclick="updateBudget()">Update Budget</button>
+                </div>
+                <div class="msg" id="budget-msg"></div>
+            </div>
+
+            <!-- LOG EXPENSE -->
+            <div class="section-title">Log New Expense</div>
+            <div class="card">
+                <div class="form-row">
+                    <input class="inp" id="exp-amount" type="number" placeholder="Amount ($)" min="0" step="0.01">
+                    <select class="inp" id="exp-category">
+                        <option value="">Select Category</option>
+                        <option value="Food & Drinks">🍕 Food & Drinks</option>
+                        <option value="Supplies">📦 Supplies</option>
+                        <option value="Speaker">🎤 Speaker</option>
+                        <option value="Marketing">📢 Marketing</option>
+                        <option value="Travel">✈️ Travel</option>
+                        <option value="Technology">💻 Technology</option>
+                        <option value="Venue">🏛️ Venue</option>
+                        <option value="Other">📌 Other</option>
+                    </select>
+                </div>
+                <input class="inp" id="exp-desc" placeholder="Description (e.g. Pizza for weekly meeting)"
+                    style="margin-bottom:12px">
+                <button class="btn-log" onclick="logExpense()">+ Log Expense</button>
+                <div class="msg" id="log-msg"></div>
+            </div>
+
+            <!-- CATEGORY BREAKDOWN -->
+            <div class="section-title">Spending by Category</div>
+            <div class="card" id="breakdown">
+                {% set cat_colors = ['#667eea','#43e97b','#f093fb','#fda085','#4facfe','#fa709a','#fee140','#fc8181'] %}
+                {% if summary.by_category %}
+                {% for cat in summary.by_category %}
+                <div class="cat-item">
+                    <div class="cat-dot" style="background:{{ cat_colors[loop.index0 % 8] }}"></div>
+                    <div class="cat-name">{{ cat.category }}</div>
+                    <div class="cat-bar-wrap">
+                        <div class="cat-bar"
+                            style="width:{{ [(cat.total / summary.spent * 100)|int, 100]|min if summary.spent > 0 else 0 }}%;background:{{ cat_colors[loop.index0 % 8] }}">
+                        </div>
+                    </div>
+                    <div class="cat-amount">${{ "%.2f"|format(cat.total) }}</div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty">No expenses logged yet</div>
+                {% endif %}
+            </div>
+
+            <!-- TRANSACTIONS -->
+            <div class="section-title">All Transactions</div>
+            <div class="card" id="expense-table">
+                {% if expenses %}
+                {% set icons = {'Food &
+                Drinks':'🍕','Supplies':'📦','Speaker':'🎤','Marketing':'📢','Travel':'✈️','Technology':'💻','Venue':'🏛️','Other':'📌'}
+                %}
+                {% set bgcolors = {'Food &
+                Drinks':'#2a1a0a','Supplies':'#1a2a1a','Speaker':'#1a1a2a','Marketing':'#2a1a2a','Travel':'#1a2a2a','Technology':'#1a1a2e','Venue':'#2a2a1a','Other':'#1a1a1a'}
+                %}
+                {% for exp in expenses %}
+                <div class="expense-row">
+                    <div class="expense-icon" style="background:{{ bgcolors.get(exp.category,'#1a1a2e') }}">{{
+                        icons.get(exp.category,'📌') }}</div>
+                    <div class="expense-info">
+                        <div class="expense-desc">{{ exp.description }}</div>
+                        <div class="expense-meta">{{ exp.category }} · {{ exp.logged_at[:10] }}</div>
+                    </div>
+                    <div class="expense-amount">-${{ "%.2f"|format(exp.amount) }}</div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty">No transactions yet — log your first expense above</div>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <script>
+            const socket = io();
+
+            const CAT_ICONS = { 'Food & Drinks': '🍕', 'Supplies': '📦', 'Speaker': '🎤', 'Marketing': '📢', 'Travel': '✈️', 'Technology': '💻', 'Venue': '🏛️', 'Other': '📌' };
+            const CAT_BGCOLORS = { 'Food & Drinks': '#2a1a0a', 'Supplies': '#1a2a1a', 'Speaker': '#1a1a2a', 'Marketing': '#2a1a2a', 'Travel': '#1a2a2a', 'Technology': '#1a1a2e', 'Venue': '#2a2a1a', 'Other': '#1a1a1a' };
+
+            // ── SINGLE updateDisplay function — no duplicates ─────────────────
+            function updateDisplay(s) {
+                document.getElementById('val-remaining').textContent = s.remaining.toFixed(2);
+                document.getElementById('val-rem2').textContent = '$' + s.remaining.toFixed(2);
+                document.getElementById('val-budget').textContent = '$' + s.budget.toFixed(2);
+                document.getElementById('val-spent').textContent = '$' + s.spent.toFixed(2);
+                document.getElementById('val-sub').textContent = 'remaining of $' + s.budget.toFixed(2) + ' total budget';
+                document.getElementById('val-spent-lbl').textContent = '$' + s.spent.toFixed(2) + ' spent';
+                document.getElementById('val-pct-lbl').textContent = s.percent_used + '% used';
+                document.getElementById('progress-fill').style.width = s.percent_used + '%';
+
+                // AI insight
+                const insight = document.getElementById('ai-insight');
+                if (s.budget === 0) {
+                    insight.textContent = 'Set your semester budget above to get started. PulseAI will track spending and provide financial insights automatically.';
+                } else if (s.percent_used < 40) {
+                    insight.textContent = `Budget is healthy — ${s.percent_used}% used. At this pace, the club is on track to finish the semester under budget. Consider allocating remaining funds toward a year-end event.`;
+                } else if (s.percent_used < 70) {
+                    insight.textContent = `Budget usage is moderate at ${s.percent_used}%. Spending is on track. Monitor food and drinks closely — it tends to spike near end of semester events.`;
+                } else {
+                    insight.textContent = `⚠️ Budget usage is at ${s.percent_used}%. Only $${s.remaining.toFixed(2)} remaining. Recommend prioritizing essential expenses only and seeking additional funding.`;
+                }
+            }
+
+            function updateBudget() {
+                const amount = parseFloat(document.getElementById('budget-input').value);
+                const msg = document.getElementById('budget-msg');
+                if (!amount || amount <= 0) {
+                    msg.textContent = 'Enter a valid budget amount.';
+                    msg.className = 'msg err';
+                    return;
+                }
+                fetch('/api/treasury/budget', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount })
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            msg.textContent = `✅ Budget set to $${amount.toFixed(2)}`;
+                            msg.className = 'msg ok';
+                            updateDisplay(data.summary);
+                            setTimeout(() => msg.className = 'msg', 3000);
+                        }
+                    })
+                    .catch(() => { msg.textContent = 'Error updating budget.'; msg.className = 'msg err'; });
+            }
+
+            function logExpense() {
+                const amount = parseFloat(document.getElementById('exp-amount').value);
+                const category = document.getElementById('exp-category').value;
+                const desc = document.getElementById('exp-desc').value.trim();
+                const msg = document.getElementById('log-msg');
+
+                if (!amount || amount <= 0) { msg.textContent = 'Enter a valid amount.'; msg.className = 'msg err'; return; }
+                if (!category) { msg.textContent = 'Select a category.'; msg.className = 'msg err'; return; }
+                if (!desc) { msg.textContent = 'Add a description.'; msg.className = 'msg err'; return; }
+
+                fetch('/api/treasury/expense', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount, category, description: desc })
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            msg.textContent = `✅ $${amount.toFixed(2)} logged`;
+                            msg.className = 'msg ok';
+                            document.getElementById('exp-amount').value = '';
+                            document.getElementById('exp-category').value = '';
+                            document.getElementById('exp-desc').value = '';
+                            addExpenseRow({ amount, category, description: desc, logged_at: new Date().toISOString() });
+                            updateDisplay(data.summary);
+                            setTimeout(() => msg.className = 'msg', 3000);
+                        }
+                    })
+                    .catch(() => { msg.textContent = 'Error logging expense.'; msg.className = 'msg err'; });
+            }
+
+            function addExpenseRow(exp) {
+                const table = document.getElementById('expense-table');
+                const empty = table.querySelector('.empty');
+                if (empty) empty.remove();
+                const icon = CAT_ICONS[exp.category] || '📌';
+                const color = CAT_BGCOLORS[exp.category] || '#1a1a2e';
+                const date = exp.logged_at.slice(0, 10);
+                const row = document.createElement('div');
+                row.className = 'expense-row';
+                row.innerHTML = `
+    <div class="expense-icon" style="background:${color}">${icon}</div>
+    <div class="expense-info">
+      <div class="expense-desc">${exp.description}</div>
+      <div class="expense-meta">${exp.category} · ${date}</div>
+    </div>
+    <div class="expense-amount">-$${parseFloat(exp.amount).toFixed(2)}</div>
+  `;
+                table.prepend(row);
+            }
+
+            socket.on('treasury_updated', (summary) => updateDisplay(summary));
+        </script>
+</body>
+
+</html>
