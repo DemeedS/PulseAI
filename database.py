@@ -323,7 +323,6 @@ def get_member_rsvp(event_id, member_id):
 # ── TREASURY ─────────────────────────────────────────────────────────
 
 def init_treasury_table():
-    """Create treasury tables if not exists."""
     conn = get_db()
     c = conn.cursor()
     c.execute("""
