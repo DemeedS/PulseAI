@@ -7,3 +7,4 @@ anthropic
 python-dotenv
 sendgrid
 gunicorn
+psycopg2-binary
