@@ -1,1350 +1,1143 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ event.title }} — PulseAI</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --bg: #080808;
-            --card: #141414;
-            --card2: #1c1c1c;
-            --border: #2a2a2a;
-            --gold: #f0b842;
-            --gold2: #e8960c;
-            --gold-dim: rgba(240, 184, 66, 0.1);
-            --green: #34c759;
-            --red: #ff453a;
-            --amber: #ff9f0a;
-            --blue: #0a84ff;
-            --purple: #7c6af7;
-            --text: #f5f5f7;
-            --text2: #a1a1a6;
-            --text3: #48484a;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
-        }
-
-        /* ── APPLE SCROLL REVEAL ── */
-        .reveal {
-            opacity: 0;
-            transform: scale(0.88) translateY(80px);
-            transition:
-                opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
-            will-change: opacity, transform;
-            visibility: hidden;
-        }
-
-        .reveal.visible {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-            visibility: visible;
-        }
-
-        .reveal.d1 {
-            transition-delay: 0.12s;
-        }
-
-        .reveal.d2 {
-            transition-delay: 0.24s;
-        }
-
-        .reveal.d3 {
-            transition-delay: 0.36s;
-        }
-
-        /* ── HEADER ── */
-        .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 200;
-            height: 52px;
-            background: rgba(8, 8, 8, 0.8);
-            backdrop-filter: saturate(180%) blur(20px);
-            -webkit-backdrop-filter: saturate(180%) blur(20px);
-            border-bottom: 0.5px solid rgba(255, 255, 255, 0.07);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
-        }
-
-        .back {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            color: var(--text2);
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 500;
-            padding: 6px 14px;
-            background: var(--card);
-            border: 0.5px solid var(--border);
-            border-radius: 20px;
-            transition: all 0.2s;
-        }
-
-        .back:hover {
-            color: var(--gold);
-            border-color: var(--gold);
-        }
-
-        .header-center {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text);
-            max-width: 360px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            letter-spacing: -0.2px;
-        }
-
-        .admin-btn {
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            padding: 6px 14px;
-            background: var(--card);
-            border: 0.5px solid var(--border);
-            border-radius: 20px;
-            color: var(--text3);
-            cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
-        }
-
-        .admin-btn.on {
-            background: var(--gold-dim);
-            border-color: var(--gold);
-            color: var(--gold);
-        }
-
-        /* ── HERO ── */
-        .hero {
-            width: 100%;
-            height: 480px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 60px 40px;
-            position: relative;
-            overflow: hidden;
-            margin-top: 52px;
-            background: linear-gradient(180deg, #120a00 0%, #0a0a14 60%, #080808 100%);
-        }
-
-        .hero-orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            pointer-events: none;
-        }
-
-        .orb1 {
-            width: 600px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(240, 184, 66, 0.12), transparent);
-            top: -80px;
-            left: 50%;
-            transform: translateX(-50%);
-            animation: orb-drift 10s ease-in-out infinite alternate;
-        }
-
-        .orb2 {
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(124, 106, 247, 0.08), transparent);
-            bottom: -60px;
-            right: -60px;
-            animation: orb-drift 14s ease-in-out infinite alternate-reverse;
-        }
-
-        @keyframes orb-drift {
-            from {
-                transform: translate(0, 0);
-            }
-
-            to {
-                transform: translate(25px, 20px);
-            }
-        }
-
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            color: var(--gold);
-            text-transform: uppercase;
-            padding: 6px 16px;
-            background: var(--gold-dim);
-            border: 0.5px solid rgba(240, 184, 66, 0.3);
-            border-radius: 20px;
-            margin-bottom: 28px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .hero-title {
-            font-size: clamp(32px, 5vw, 60px);
-            font-weight: 900;
-            letter-spacing: -2px;
-            line-height: 1.05;
-            margin-bottom: 16px;
-            position: relative;
-            z-index: 1;
-            background: linear-gradient(135deg, var(--text) 0%, rgba(255, 255, 255, 0.7) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .hero-sub {
-            font-size: 16px;
-            color: var(--text2);
-            position: relative;
-            z-index: 1;
-            font-weight: 400;
-            letter-spacing: -0.2px;
-        }
-
-        .hero-upload-label {
-            position: absolute;
-            bottom: 16px;
-            right: 16px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--gold);
-            padding: 7px 14px;
-            background: var(--gold-dim);
-            border: 0.5px solid rgba(240, 184, 66, 0.3);
-            border-radius: 10px;
-            cursor: pointer;
-            z-index: 1;
-            transition: all 0.2s;
-            display: none;
-        }
-
-        .hero-upload-label:hover {
-            background: rgba(240, 184, 66, 0.2);
-        }
-
-        #flyer-file {
-            display: none;
-        }
-
-        /* ── PAGE ── */
-        .page {
-            max-width: 720px;
-            margin: 0 auto;
-            padding: 80px 24px 120px;
-        }
-
-        /* ── SECTION HEADER ── */
-        .s-eyebrow {
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 3px;
-            color: var(--gold);
-            text-transform: uppercase;
-            margin-bottom: 10px;
-        }
-
-        .s-headline {
-            font-size: clamp(24px, 3vw, 36px);
-            font-weight: 800;
-            letter-spacing: -1px;
-            line-height: 1.1;
-            color: var(--text);
-            margin-bottom: 10px;
-        }
-
-        .s-sub {
-            font-size: 15px;
-            color: var(--text2);
-            line-height: 1.6;
-            margin-bottom: 28px;
-            letter-spacing: -0.2px;
-        }
-
-        /* ── SECTION SPACER ── */
-        .spacer {
-            height: 80px;
-        }
-
-        .divider {
-            height: 0.5px;
-            background: var(--border);
-            margin: 80px 0;
-        }
-
-        /* ── STATS ── */
-        .stats-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
-
-        .stat-card {
-            background: var(--card);
-            border: 0.5px solid var(--border);
-            border-radius: 20px;
-            padding: 28px;
-            text-align: center;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .stat-card:hover {
-            transform: scale(1.04);
-            border-color: var(--gold);
-        }
-
-        .stat-n {
-            font-size: 44px;
-            font-weight: 900;
-            letter-spacing: -2px;
-        }
-
-        .stat-n.g {
-            color: var(--green);
-        }
-
-        .stat-n.gr {
-            color: var(--text3);
-        }
-
-        .stat-l {
-            font-size: 10px;
-            color: var(--text3);
-            margin-top: 6px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        /* ── INFO CARD ── */
-        .info-card {
-            background: var(--card);
-            border: 0.5px solid var(--border);
-            border-radius: 20px;
-            overflow: hidden;
-        }
-
-        .info-row {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 18px 22px;
-            border-bottom: 0.5px solid var(--border);
-            transition: background 0.2s;
-        }
-
-        .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .info-row:hover {
-            background: var(--card2);
-        }
-
-        .info-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: var(--card2);
-            border: 0.5px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 17px;
-            flex-shrink: 0;
-        }
-
-        .info-lbl {
-            font-size: 10px;
-            color: var(--text3);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 3px;
-        }
-
-        .info-val {
-            font-size: 15px;
-            color: var(--text);
-            font-weight: 600;
-            letter-spacing: -0.2px;
-        }
-
-        /* ── RSVP ── */
-        .rsvp-box {
-            background: var(--card);
-            border: 0.5px solid var(--border);
-            border-radius: 20px;
-            padding: 28px;
-        }
-
-        .inp {
-            width: 100%;
-            background: var(--card2);
-            border: 0.5px solid var(--border);
-            border-radius: 12px;
-            color: var(--text);
-            font-size: 15px;
-            padding: 14px 16px;
-            margin-bottom: 14px;
-            font-family: inherit;
-            transition: border-color 0.2s;
-            letter-spacing: -0.1px;
-        }
-
-        .inp:focus {
-            outline: none;
-            border-color: var(--gold);
-        }
-
-        .inp::placeholder {
-            color: var(--text3);
-        }
-
-        .rsvp-btns {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .btn-going {
-            padding: 15px;
-            background: linear-gradient(135deg, #34c759, #30d158);
-            border: none;
-            border-radius: 14px;
-            color: #012a0f;
-            font-size: 14px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: all 0.25s;
-            box-shadow: 0 4px 20px rgba(52, 199, 89, 0.2);
-            letter-spacing: -0.2px;
-        }
-
-        .btn-going:hover {
-            transform: scale(1.02) translateY(-1px);
-            box-shadow: 0 8px 30px rgba(52, 199, 89, 0.35);
-        }
-
-        .btn-no {
-            padding: 15px;
-            background: var(--card2);
-            border: 0.5px solid var(--border);
-            border-radius: 14px;
-            color: var(--text2);
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.25s;
-            letter-spacing: -0.2px;
-        }
-
-        .btn-no:hover {
-            border-color: var(--red);
-            color: var(--red);
-            transform: scale(1.02) translateY(-1px);
-        }
-
-        .rsvp-msg {
-            margin-top: 14px;
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 13px;
-            text-align: center;
-            display: none;
-            letter-spacing: -0.1px;
-        }
-
-        .rsvp-msg.ok {
-            background: rgba(52, 199, 89, 0.08);
-            color: var(--green);
-            border: 0.5px solid rgba(52, 199, 89, 0.2);
-            display: block;
-        }
-
-        .rsvp-msg.err {
-            background: rgba(255, 69, 58, 0.08);
-            color: var(--red);
-            border: 0.5px solid rgba(255, 69, 58, 0.2);
-            display: block;
-        }
-
-        .gcal-btn {
-            width: 100%;
-            margin-top: 12px;
-            padding: 13px;
-            background: var(--card2);
-            border: 0.5px solid var(--border);
-            border-radius: 12px;
-            color: var(--text2);
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            text-decoration: none;
-            transition: all 0.2s;
-            letter-spacing: -0.1px;
-        }
-
-        .gcal-btn:hover {
-            border-color: var(--gold);
-            color: var(--gold);
-            background: var(--gold-dim);
-        }
-
-        /* ── GUESTS ── */
-        .guests-box {
-            background: var(--card);
-            border: 0.5px solid var(--border);
-            border-radius: 20px;
-            padding: 28px;
-        }
-
-        .guests-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .guests-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--text);
-            letter-spacing: -0.3px;
-        }
-
-        .guests-count {
-            font-size: 11px;
-            color: var(--green);
-            font-weight: 700;
-            padding: 4px 12px;
-            letter-spacing: 1px;
-            background: rgba(52, 199, 89, 0.08);
-            border: 0.5px solid rgba(52, 199, 89, 0.25);
-            border-radius: 20px;
-            text-transform: uppercase;
-        }
-
-        .guest {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 12px 0;
-            border-bottom: 0.5px solid var(--border);
-            animation: guest-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-
-        .guest:last-child {
-            border-bottom: none;
-        }
-
-        @keyframes guest-in {
-            from {
-                opacity: 0;
-                transform: translateX(-16px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .g-av {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            font-weight: 800;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .g-name {
-            font-size: 15px;
-            color: var(--text);
-            font-weight: 600;
-            letter-spacing: -0.2px;
-        }
-
-        .no-guests {
-            text-align: center;
-            padding: 32px;
-            color: var(--text3);
-            font-size: 14px;
-        }
-
-        /* ── BUDGET ── */
-        .budget-hero {
-            background: linear-gradient(135deg, #120a00, #0a0818);
-            border: 0.5px solid rgba(240, 184, 66, 0.2);
-            border-radius: 20px;
-            padding: 28px;
-            margin-bottom: 14px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .budget-orb {
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            top: -100px;
-            right: -60px;
-            background: radial-gradient(circle, rgba(240, 184, 66, 0.08), transparent);
-            filter: blur(40px);
-            pointer-events: none;
-        }
-
-        .b-lbl {
-            font-size: 10px;
-            color: var(--text3);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 8px;
-        }
-
-        .b-amount {
-            font-size: 52px;
-            font-weight: 900;
-            letter-spacing: -3px;
-            margin-bottom: 4px;
-        }
-
-        .b-amount .dollar {
-            font-size: 28px;
-            color: var(--text3);
-            font-weight: 600;
-        }
-
-        .b-amount .val {
-            background: linear-gradient(135deg, var(--gold), var(--amber));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .b-sub {
-            font-size: 13px;
-            color: var(--text3);
-            margin-bottom: 20px;
-            letter-spacing: -0.1px;
-        }
-
-        .prog-bg {
-            background: rgba(255, 255, 255, 0.06);
-            border-radius: 99px;
-            height: 6px;
-            overflow: hidden;
-        }
-
-        .prog-fill {
-            height: 100%;
-            border-radius: 99px;
-            background: linear-gradient(90deg, var(--gold), var(--amber));
-            transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .prog-lbls {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            color: var(--text3);
-            margin-top: 8px;
-            margin-bottom: 24px;
-        }
-
-        .b-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-
-        .b-stat {
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 12px;
-            padding: 14px;
-            text-align: center;
-        }
-
-        .b-stat-n {
-            font-size: 18px;
-            font-weight: 800;
-            margin-bottom: 4px;
-            letter-spacing: -0.5px;
-        }
-
-        .b-stat-n.g {
-            color: var(--green);
-        }
-
-        .b-stat-n.r {
-            color: var(--red);
-        }
-
-        .b-stat-n.a {
-            color: var(--gold);
-        }
-
-        .b-stat-l {
-            font-size: 10px;
-            color: var(--text3);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .form-box {
-            background: var(--card);
-            border: 0.5px solid var(--border);
-            border-radius: 16px;
-            padding: 22px;
-            margin-bottom: 12px;
-            transition: border-color 0.3s;
-        }
-
-        .form-box:focus-within {
-            border-color: var(--gold);
-        }
-
-        .form-lbl {
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 14px;
-        }
-
-        .form-2col {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .btn-gold {
-            width: 100%;
-            padding: 13px;
-            background: linear-gradient(135deg, var(--gold), var(--gold2));
-            border: none;
-            border-radius: 12px;
-            color: #1a0f00;
-            font-size: 13px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: all 0.2s;
-            letter-spacing: -0.1px;
-        }
-
-        .btn-gold:hover {
-            opacity: 0.9;
-            transform: scale(1.01);
-        }
-
-        .form-msg {
-            margin-top: 10px;
-            font-size: 12px;
-            text-align: center;
-        }
-
-        .tx-list {}
-
-        .tx-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
-            border-bottom: 0.5px solid var(--border);
-        }
-
-        .tx-row:last-child {
-            border-bottom: none;
-        }
-
-        .tx-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: var(--card2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            flex-shrink: 0;
-        }
-
-        .tx-desc {
-            font-size: 14px;
-            color: var(--text);
-            font-weight: 500;
-            letter-spacing: -0.1px;
-        }
-
-        .tx-meta {
-            font-size: 11px;
-            color: var(--text3);
-            margin-top: 2px;
-        }
-
-        .tx-amt {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--red);
-            margin-left: auto;
-            letter-spacing: -0.3px;
-        }
-
-        /* ── ADMIN EDIT ── */
-        .edit-box {
-            background: var(--card);
-            border: 0.5px solid var(--border);
-            border-radius: 20px;
-            padding: 28px;
-        }
-
-        .edit-lbl {
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--text3);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 18px;
-        }
-
-        .btn-save {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, var(--purple), #9d8fff);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            letter-spacing: -0.1px;
-        }
-
-        .btn-save:hover {
-            opacity: 0.9;
-            transform: scale(1.02);
-        }
-
-        /* ── FOOTER ── */
-        .footer {
-            text-align: center;
-            padding: 60px 0 0;
-            color: var(--text3);
-            font-size: 11px;
-            letter-spacing: 2px;
-        }
-
-        /* ── SCROLLBAR ── */
-        ::-webkit-scrollbar {
-            width: 3px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 2px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--gold);
-        }
+            --bg: #080808; --card: #141414; --card2: #1c1c1c; --border: #2a2a2a;
+            --gold: #f0b842; --gold2: #e8960c; --gold-dim: rgba(240,184,66,0.1);
+            --green: #34c759; --red: #ff453a; --amber: #ff9f0a; --blue: #0a84ff;
+            --purple: #7c6af7; --text: #f5f5f7; --text2: #a1a1a6; --text3: #48484a;
+        }
+        html { scroll-behavior: smooth; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+               background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+        .reveal { opacity: 0; transform: scale(0.88) translateY(80px);
+                  transition: opacity 1.1s cubic-bezier(0.16,1,0.3,1), transform 1.1s cubic-bezier(0.16,1,0.3,1);
+                  will-change: opacity, transform; visibility: hidden; }
+        .reveal.visible { opacity: 1; transform: scale(1) translateY(0); visibility: visible; }
+        .reveal.d1 { transition-delay: 0.12s; } .reveal.d2 { transition-delay: 0.24s; }
+
+        /* HEADER */
+        .header { position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: 52px;
+                  background: rgba(8,8,8,0.8); backdrop-filter: saturate(180%) blur(20px);
+                  border-bottom: 0.5px solid rgba(255,255,255,0.07);
+                  display: flex; align-items: center; justify-content: space-between; padding: 0 32px; }
+        .back { display: flex; align-items: center; gap: 7px; color: var(--text2); text-decoration: none;
+                font-size: 13px; font-weight: 500; padding: 6px 14px; background: var(--card);
+                border: 0.5px solid var(--border); border-radius: 20px; transition: all 0.2s; }
+        .back:hover { color: var(--gold); border-color: var(--gold); }
+        .header-center { font-size: 14px; font-weight: 600; color: var(--text); max-width: 360px;
+                         white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .admin-btn { font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 6px 14px;
+                     background: var(--card); border: 0.5px solid var(--border); border-radius: 20px;
+                     color: var(--text3); cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
+        .admin-btn.on { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+        /* HERO */
+        .hero { width: 100%; height: 480px; display: flex; flex-direction: column; align-items: center;
+                justify-content: center; text-align: center; padding: 60px 40px; position: relative;
+                overflow: hidden; margin-top: 52px;
+                background: linear-gradient(180deg, #120a00 0%, #0a0a14 60%, #080808 100%); }
+        .hero-orb { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
+        .orb1 { width: 600px; height: 400px; background: radial-gradient(circle,rgba(240,184,66,0.12),transparent);
+                top: -80px; left: 50%; transform: translateX(-50%); animation: orb-drift 10s ease-in-out infinite alternate; }
+        .orb2 { width: 300px; height: 300px; background: radial-gradient(circle,rgba(124,106,247,0.08),transparent);
+                bottom: -60px; right: -60px; animation: orb-drift 14s ease-in-out infinite alternate-reverse; }
+        @keyframes orb-drift { from { transform:translate(0,0); } to { transform:translate(25px,20px); } }
+        .hero-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700;
+                      letter-spacing: 2px; color: var(--gold); text-transform: uppercase; padding: 6px 16px;
+                      background: var(--gold-dim); border: 0.5px solid rgba(240,184,66,0.3); border-radius: 20px;
+                      margin-bottom: 28px; position: relative; z-index: 1; }
+        .hero-title { font-size: clamp(32px,5vw,60px); font-weight: 900; letter-spacing: -2px; line-height: 1.05;
+                      margin-bottom: 16px; position: relative; z-index: 1;
+                      background: linear-gradient(135deg,var(--text) 0%,rgba(255,255,255,0.7) 100%);
+                      -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero-sub { font-size: 16px; color: var(--text2); position: relative; z-index: 1; }
+        .hero-upload-label { position: absolute; bottom: 16px; right: 16px; font-size: 11px; font-weight: 600;
+                             color: var(--gold); padding: 7px 14px; background: var(--gold-dim);
+                             border: 0.5px solid rgba(240,184,66,0.3); border-radius: 10px; cursor: pointer;
+                             z-index: 1; transition: all 0.2s; display: none; }
+        .hero-upload-label:hover { background: rgba(240,184,66,0.2); }
+        #flyer-file { display: none; }
+
+        /* PAGE */
+        .page { max-width: 720px; margin: 0 auto; padding: 80px 24px 120px; }
+        .s-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; margin-bottom: 10px; }
+        .s-headline { font-size: clamp(24px,3vw,36px); font-weight: 800; letter-spacing: -1px; line-height: 1.1; color: var(--text); margin-bottom: 10px; }
+        .s-sub { font-size: 15px; color: var(--text2); line-height: 1.6; margin-bottom: 28px; }
+        .divider { height: 0.5px; background: var(--border); margin: 80px 0; }
+
+        /* STATS */
+        .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .stat-card { background: var(--card); border: 0.5px solid var(--border); border-radius: 20px;
+                     padding: 28px; text-align: center; transition: all 0.4s cubic-bezier(0.16,1,0.3,1); }
+        .stat-card:hover { transform: scale(1.04); border-color: var(--gold); }
+        .stat-n { font-size: 44px; font-weight: 900; letter-spacing: -2px; }
+        .stat-n.g { color: var(--green); } .stat-n.gr { color: var(--text3); }
+        .stat-l { font-size: 10px; color: var(--text3); margin-top: 6px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; }
+
+        /* INFO CARD */
+        .info-card { background: var(--card); border: 0.5px solid var(--border); border-radius: 20px; overflow: hidden; }
+        .info-row { display: flex; align-items: center; gap: 16px; padding: 18px 22px;
+                    border-bottom: 0.5px solid var(--border); transition: background 0.2s; }
+        .info-row:last-child { border-bottom: none; }
+        .info-row:hover { background: var(--card2); }
+        .info-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--card2);
+                     border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+        .info-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+        .info-val { font-size: 15px; color: var(--text); font-weight: 600; }
+
+        /* RSVP */
+        .rsvp-box { background: var(--card); border: 0.5px solid var(--border); border-radius: 20px; padding: 28px; }
+        .inp { width: 100%; background: var(--card2); border: 0.5px solid var(--border); border-radius: 12px;
+               color: var(--text); font-size: 15px; padding: 14px 16px; margin-bottom: 14px;
+               font-family: inherit; transition: border-color 0.2s; }
+        .inp:focus { outline: none; border-color: var(--gold); }
+        .inp::placeholder { color: var(--text3); }
+        .rsvp-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-going { padding: 15px; background: linear-gradient(135deg,#34c759,#30d158); border: none;
+                     border-radius: 14px; color: #012a0f; font-size: 14px; font-weight: 800; cursor: pointer;
+                     transition: all 0.25s; box-shadow: 0 4px 20px rgba(52,199,89,0.2); }
+        .btn-going:hover { transform: scale(1.02) translateY(-1px); box-shadow: 0 8px 30px rgba(52,199,89,0.35); }
+        .btn-no { padding: 15px; background: var(--card2); border: 0.5px solid var(--border); border-radius: 14px;
+                  color: var(--text2); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.25s; }
+        .btn-no:hover { border-color: var(--red); color: var(--red); transform: scale(1.02) translateY(-1px); }
+        .rsvp-msg { margin-top: 14px; padding: 12px; border-radius: 12px; font-size: 13px; text-align: center; display: none; }
+        .rsvp-msg.ok { background: rgba(52,199,89,0.08); color: var(--green); border: 0.5px solid rgba(52,199,89,0.2); display: block; }
+        .rsvp-msg.err { background: rgba(255,69,58,0.08); color: var(--red); border: 0.5px solid rgba(255,69,58,0.2); display: block; }
+        .gcal-btn { width: 100%; margin-top: 12px; padding: 13px; background: var(--card2);
+                    border: 0.5px solid var(--border); border-radius: 12px; color: var(--text2);
+                    font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center;
+                    justify-content: center; gap: 8px; text-decoration: none; transition: all 0.2s; }
+        .gcal-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+
+        /* GUESTS */
+        .guests-box { background: var(--card); border: 0.5px solid var(--border); border-radius: 20px; padding: 28px; }
+        .guests-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .guests-title { font-size: 16px; font-weight: 700; color: var(--text); }
+        .guests-count { font-size: 11px; color: var(--green); font-weight: 700; padding: 4px 12px;
+                        background: rgba(52,199,89,0.08); border: 0.5px solid rgba(52,199,89,0.25);
+                        border-radius: 20px; text-transform: uppercase; }
+        .guest { display: flex; align-items: center; gap: 14px; padding: 12px 0;
+                 border-bottom: 0.5px solid var(--border); animation: guest-in 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+        .guest:last-child { border-bottom: none; }
+        @keyframes guest-in { from { opacity:0; transform:translateX(-16px); } to { opacity:1; transform:translateX(0); } }
+        .g-av { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center;
+                justify-content: center; font-size: 15px; font-weight: 800; color: white; flex-shrink: 0; }
+        .g-name { font-size: 15px; color: var(--text); font-weight: 600; }
+        .no-guests { text-align: center; padding: 32px; color: var(--text3); font-size: 14px; }
+
+        /* BUDGET */
+        .budget-hero { background: linear-gradient(135deg,#120a00,#0a0818); border: 0.5px solid rgba(240,184,66,0.2);
+                       border-radius: 20px; padding: 28px; margin-bottom: 14px; position: relative; overflow: hidden; }
+        .budget-orb { position: absolute; width: 300px; height: 300px; border-radius: 50%; top: -100px; right: -60px;
+                      background: radial-gradient(circle,rgba(240,184,66,0.08),transparent); filter: blur(40px); pointer-events: none; }
+        .b-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+        .b-amount { font-size: 52px; font-weight: 900; letter-spacing: -3px; margin-bottom: 4px; }
+        .b-amount .dollar { font-size: 28px; color: var(--text3); font-weight: 600; }
+        .b-amount .val { background: linear-gradient(135deg,var(--gold),var(--amber));
+                         -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .b-sub { font-size: 13px; color: var(--text3); margin-bottom: 20px; }
+        .prog-bg { background: rgba(255,255,255,0.06); border-radius: 99px; height: 6px; overflow: hidden; }
+        .prog-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg,var(--gold),var(--amber));
+                     transition: width 1s cubic-bezier(0.16,1,0.3,1); }
+        .prog-lbls { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3);
+                     margin-top: 8px; margin-bottom: 24px; }
+        .b-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+        .b-stat { background: rgba(0,0,0,0.4); border-radius: 12px; padding: 14px; text-align: center; }
+        .b-stat-n { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+        .b-stat-n.g { color: var(--green); } .b-stat-n.r { color: var(--red); } .b-stat-n.a { color: var(--gold); }
+        .b-stat-l { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+        .form-box { background: var(--card); border: 0.5px solid var(--border); border-radius: 16px;
+                    padding: 22px; margin-bottom: 12px; transition: border-color 0.3s; }
+        .form-box:focus-within { border-color: var(--gold); }
+        .form-lbl { font-size: 10px; font-weight: 700; color: var(--gold); text-transform: uppercase;
+                    letter-spacing: 2px; margin-bottom: 14px; }
+        .form-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .btn-gold { width: 100%; padding: 13px; background: linear-gradient(135deg,var(--gold),var(--gold2));
+                    border: none; border-radius: 12px; color: #1a0f00; font-size: 13px; font-weight: 800;
+                    cursor: pointer; transition: all 0.2s; }
+        .btn-gold:hover { opacity: 0.9; transform: scale(1.01); }
+        .form-msg { margin-top: 10px; font-size: 12px; text-align: center; }
+        .tx-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+        .tx-row:last-child { border-bottom: none; }
+        .tx-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--card2);
+                   display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+        .tx-desc { font-size: 14px; color: var(--text); font-weight: 500; }
+        .tx-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+        .tx-amt { font-size: 14px; font-weight: 700; color: var(--red); margin-left: auto; }
+
+        /* SABC BUDGET BUILDER BUTTON */
+        .btn-sabc-open { width: 100%; padding: 14px; background: linear-gradient(135deg,rgba(124,106,247,0.15),rgba(124,106,247,0.05));
+                         border: 0.5px solid rgba(124,106,247,0.4); border-radius: 14px; color: var(--purple);
+                         font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.25s;
+                         display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; }
+        .btn-sabc-open:hover { background: rgba(124,106,247,0.2); border-color: var(--purple);
+                                transform: scale(1.01); box-shadow: 0 4px 20px rgba(124,106,247,0.2); }
+
+        /* ADMIN EDIT */
+        .edit-box { background: var(--card); border: 0.5px solid var(--border); border-radius: 20px; padding: 28px; }
+        .edit-lbl { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase;
+                    letter-spacing: 2px; margin-bottom: 18px; }
+        .btn-save { padding: 12px 24px; background: linear-gradient(135deg,var(--purple),#9d8fff); border: none;
+                    border-radius: 12px; color: white; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .btn-save:hover { opacity: 0.9; transform: scale(1.02); }
+        .footer { text-align: center; padding: 60px 0 0; color: var(--text3); font-size: 11px; letter-spacing: 2px; }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+        /* ── SABC BUDGET PANEL ── */
+        .bb-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+                      z-index: 500; opacity: 0; pointer-events: none; transition: opacity 0.4s; }
+        .bb-overlay.visible { opacity: 1; pointer-events: all; }
+        .bb-panel { position: fixed; bottom: 0; left: 0; right: 0; z-index: 600; max-height: 92vh;
+                    background: var(--card); border-top: 0.5px solid var(--border); border-radius: 24px 24px 0 0;
+                    overflow-y: auto; transform: translateY(100%); transition: transform 0.5s cubic-bezier(0.16,1,0.3,1); }
+        .bb-panel.visible { transform: translateY(0); }
+        .bb-inner { padding: 28px 36px 60px; max-width: 900px; margin: 0 auto; }
+        .bb-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 24px; }
+        .bb-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; }
+        .bb-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: var(--text); }
+        .bb-subtitle { font-size: 13px; color: var(--text2); margin-top: 4px; }
+        .btn-close-bb { width: 32px; height: 32px; background: var(--card2); border: 0.5px solid var(--border);
+                        border-radius: 8px; color: var(--text2); font-size: 16px; cursor: pointer;
+                        display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+        .btn-close-bb:hover { color: var(--text); border-color: var(--gold); }
+
+        /* BB TWO COLUMN LAYOUT */
+        .bb-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 700px) { .bb-cols { grid-template-columns: 1fr; } }
+
+        .bb-section { margin-bottom: 24px; }
+        .bb-section-label { font-size: 11px; font-weight: 600; letter-spacing: 2px; color: var(--gold);
+                             text-transform: uppercase; margin-bottom: 12px; display: flex; align-items: center;
+                             gap: 8px; }
+        .bb-section-label::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
+
+        .bb-inp { width: 100%; background: var(--card2); border: 0.5px solid var(--border); border-radius: 10px;
+                  color: var(--text); font-size: 14px; padding: 11px 14px; font-family: inherit;
+                  transition: border-color 0.2s; margin-bottom: 8px; }
+        .bb-inp:focus { outline: none; border-color: var(--gold); }
+        .bb-inp::placeholder { color: var(--text3); }
+
+        .bb-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        .bb-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+
+        .btn-scrape { width: 100%; padding: 11px; background: linear-gradient(135deg,var(--purple),#9d8fff);
+                      border: none; border-radius: 10px; color: white; font-size: 13px; font-weight: 700;
+                      cursor: pointer; transition: all 0.2s; }
+        .btn-scrape:hover { opacity: 0.9; transform: scale(1.01); }
+        .btn-scrape:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .bb-divider-text { text-align: center; font-size: 11px; color: var(--text3); margin: 12px 0;
+                           display: flex; align-items: center; gap: 10px; }
+        .bb-divider-text::before,.bb-divider-text::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
+
+        .btn-add-item { width: 100%; padding: 11px; background: var(--gold-dim);
+                        border: 0.5px solid rgba(240,184,66,0.3); border-radius: 10px; color: var(--gold);
+                        font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .btn-add-item:hover { background: rgba(240,184,66,0.2); }
+
+        /* ITEM LIST */
+        .bb-item-list { display: flex; flex-direction: column; gap: 8px; min-height: 60px; }
+        .bb-item { background: var(--card2); border: 0.5px solid var(--border); border-radius: 12px;
+                   padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px;
+                   animation: item-in 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+        @keyframes item-in { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+        .bb-item-info { flex: 1; min-width: 0; }
+        .bb-item-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+        .bb-item-meta { font-size: 12px; color: var(--text3); }
+        .bb-item-tax { font-size: 11px; color: var(--green); margin-top: 2px; }
+        .bb-item-tax.taxable { color: var(--amber); }
+        .bb-item-price { font-size: 16px; font-weight: 800; color: var(--gold); white-space: nowrap; }
+        .btn-rm-item { width: 26px; height: 26px; background: rgba(255,69,58,0.08); border: 0.5px solid rgba(255,69,58,0.2);
+                       border-radius: 6px; color: var(--red); cursor: pointer; display: flex; align-items: center;
+                       justify-content: center; font-size: 13px; transition: all 0.2s; flex-shrink: 0; }
+        .btn-rm-item:hover { background: rgba(255,69,58,0.18); }
+        .bb-empty-items { text-align: center; padding: 28px; color: var(--text3); font-size: 13px;
+                          border: 0.5px dashed var(--border); border-radius: 12px; }
+
+        /* COMPLIANCE FLAGS */
+        .flag-item { padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 6px;
+                     display: flex; align-items: flex-start; gap: 10px; }
+        .flag-item.required { background: rgba(255,69,58,0.06); border: 0.5px solid rgba(255,69,58,0.2); color: var(--text2); }
+        .flag-item.warning  { background: rgba(255,159,10,0.06); border: 0.5px solid rgba(255,159,10,0.2); color: var(--text2); }
+        .flag-item.info     { background: rgba(10,132,255,0.06); border: 0.5px solid rgba(10,132,255,0.15); color: var(--text2); }
+        .flag-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+        /* RAMS INVOLVED PACKET */
+        .ri-field { background: var(--card2); border: 0.5px solid var(--border); border-radius: 10px;
+                    padding: 12px 14px; margin-bottom: 8px; position: relative; cursor: pointer; transition: border-color 0.2s; }
+        .ri-field:hover { border-color: var(--gold); }
+        .ri-field-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase;
+                          letter-spacing: 1.5px; margin-bottom: 4px; }
+        .ri-field-value { font-size: 14px; color: var(--text); font-weight: 500; word-break: break-word; }
+        .ri-field-value.editable { border: none; background: transparent; width: 100%; color: var(--text);
+                                   font-size: 14px; font-family: inherit; resize: vertical; min-height: 36px;
+                                   outline: none; }
+        .ri-copy-hint { position: absolute; top: 8px; right: 10px; font-size: 10px; color: var(--text3);
+                        opacity: 0; transition: opacity 0.2s; }
+        .ri-field:hover .ri-copy-hint { opacity: 1; }
+        .ri-copied { color: var(--green) !important; }
+
+        /* LINE ITEMS TABLE */
+        .li-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+        .li-table th { text-align: left; font-size: 10px; color: var(--text3); text-transform: uppercase;
+                       letter-spacing: 1px; padding: 8px 10px; border-bottom: 0.5px solid var(--border); }
+        .li-table td { padding: 10px 10px; border-bottom: 0.5px solid rgba(42,42,42,0.5); color: var(--text2); vertical-align: top; }
+        .li-table tr:last-child td { border-bottom: none; }
+        .li-table td.price { color: var(--gold); font-weight: 700; white-space: nowrap; }
+        .li-table td.vendor { color: var(--text3); font-size: 12px; }
+        .li-table td.tax-ex { color: var(--green); font-size: 11px; }
+        .li-table td.tax-add { color: var(--amber); font-size: 11px; }
+
+        /* TOTAL ROW */
+        .ri-total { display: flex; justify-content: space-between; align-items: center;
+                    padding: 14px 16px; background: var(--gold-dim); border: 0.5px solid rgba(240,184,66,0.3);
+                    border-radius: 10px; margin-top: 12px; }
+        .ri-total-label { font-size: 13px; font-weight: 700; color: var(--text); }
+        .ri-total-amount { font-size: 20px; font-weight: 900; color: var(--gold); letter-spacing: -0.5px; }
+
+        /* EXPORT BUTTON */
+        .btn-export-csv { width: 100%; padding: 14px; background: linear-gradient(135deg,#34c759,#2db84a);
+                          border: none; border-radius: 12px; color: white; font-size: 14px; font-weight: 700;
+                          cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 20px rgba(52,199,89,0.2);
+                          display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-export-csv:hover { transform: scale(1.02); box-shadow: 0 6px 28px rgba(52,199,89,0.35); }
+        .btn-export-csv:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* SCRAPE STATUS */
+        .scrape-status { font-size: 12px; color: var(--text3); text-align: center; margin-top: 6px; min-height: 18px; }
+        .scrape-status.ok { color: var(--green); }
+        .scrape-status.err { color: var(--red); }
+        .scrape-status.loading { color: var(--amber); }
+
+        /* TOGGLE */
+        .toggle-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .toggle-label { font-size: 13px; color: var(--text2); }
+        .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; inset: 0; background: var(--card2); border: 0.5px solid var(--border);
+                         border-radius: 99px; cursor: pointer; transition: all 0.2s; }
+        .toggle-slider:before { content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 2.5px;
+                                 background: var(--text3); border-radius: 50%; transition: all 0.2s; }
+        input:checked + .toggle-slider { background: rgba(52,199,89,0.2); border-color: rgba(52,199,89,0.4); }
+        input:checked + .toggle-slider:before { transform: translateX(20px); background: var(--green); }
     </style>
 </head>
-
 <body>
 
-    <!-- HEADER -->
-    <div class="header">
-        <a href="/" class="back">← Dashboard</a>
-        <div class="header-center" id="h-title">{{ event.title }}</div>
-        <button class="admin-btn" id="admin-btn" onclick="toggleAdmin()">⚙ Admin</button>
-    </div>
+<!-- HEADER -->
+<div class="header">
+    <a href="/" class="back">← Dashboard</a>
+    <div class="header-center" id="h-title">{{ event.title }}</div>
+    <button class="admin-btn" id="admin-btn" onclick="toggleAdmin()">⚙ Admin</button>
+</div>
 
-    <!-- HERO -->
-    <div class="hero" id="hero">
-        <div class="hero-orb orb1"></div>
-        <div class="hero-orb orb2"></div>
-        <div class="hero-badge">⚡ PulseAI Event</div>
-        <div class="hero-title" id="hero-title">{{ event.title }}</div>
-        <div class="hero-sub">{{ event.date }} &nbsp;·&nbsp; {{ event.time }} &nbsp;·&nbsp; {{ event.location }}</div>
-        <label class="hero-upload-label" id="upload-lbl" for="flyer-file">📷 Upload Flyer</label>
-        <input type="file" id="flyer-file" accept="image/*" onchange="uploadFlyer(this)">
-    </div>
+<!-- HERO -->
+<div class="hero" id="hero">
+    <div class="hero-orb orb1"></div>
+    <div class="hero-orb orb2"></div>
+    <div class="hero-badge">⚡ PulseAI Event</div>
+    <div class="hero-title" id="hero-title">{{ event.title }}</div>
+    <div class="hero-sub">{{ event.date }} &nbsp;·&nbsp; {{ event.time }} &nbsp;·&nbsp; {{ event.location }}</div>
+    <label class="hero-upload-label" id="upload-lbl" for="flyer-file">📷 Upload Flyer</label>
+    <input type="file" id="flyer-file" accept="image/*" onchange="uploadFlyer(this)">
+</div>
 
-    <!-- PAGE CONTENT -->
-    <div class="page">
+<!-- PAGE -->
+<div class="page">
 
-        <!-- STATS -->
-        <div class="reveal">
-            <div class="stats-row">
-                <div class="stat-card">
-                    <div class="stat-n g" id="stat-going">{{ counts.attending }}</div>
-                    <div class="stat-l">Going</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-n gr" id="stat-not">{{ counts.not_attending }}</div>
-                    <div class="stat-l">Can't Make It</div>
-                </div>
+    <!-- STATS -->
+    <div class="reveal">
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-n g" id="stat-going">{{ counts.attending }}</div>
+                <div class="stat-l">Going</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-n gr" id="stat-not">{{ counts.not_attending }}</div>
+                <div class="stat-l">Can't Make It</div>
             </div>
         </div>
+    </div>
 
-        <div class="divider"></div>
+    <div class="divider"></div>
 
-        <!-- EVENT INFO -->
-        <div class="reveal">
-            <div class="s-eyebrow">Details</div>
-            <div class="s-headline">Event Information</div>
-            <div class="s-sub">Date, time, and location for this event.</div>
-            <div class="info-card">
-                <div class="info-row">
-                    <div class="info-icon">📅</div>
-                    <div>
-                        <div class="info-lbl">Date</div>
-                        <div class="info-val">{{ event.date }}</div>
-                    </div>
+    <!-- EVENT INFO -->
+    <div class="reveal">
+        <div class="s-eyebrow">Details</div>
+        <div class="s-headline">Event Information</div>
+        <div class="s-sub">Date, time, and location for this event.</div>
+        <div class="info-card">
+            <div class="info-row">
+                <div class="info-icon">📅</div>
+                <div><div class="info-lbl">Date</div><div class="info-val">{{ event.date }}</div></div>
+            </div>
+            <div class="info-row">
+                <div class="info-icon">🕐</div>
+                <div><div class="info-lbl">Time</div><div class="info-val">{{ event.time }}</div></div>
+            </div>
+            <div class="info-row">
+                <div class="info-icon">📍</div>
+                <div><div class="info-lbl">Location</div><div class="info-val">{{ event.location }}</div></div>
+            </div>
+            {% if event.description %}
+            <div class="info-row">
+                <div class="info-icon">📝</div>
+                <div><div class="info-lbl">Description</div><div class="info-val">{{ event.description }}</div></div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- RSVP -->
+    <div class="reveal">
+        <div class="s-eyebrow">Attendance</div>
+        <div class="s-headline">RSVP</div>
+        <div class="s-sub">Let us know if you're coming.</div>
+        <div class="rsvp-box">
+            <input type="email" id="rsvp-email" class="inp" placeholder="Enter your club email address">
+            <div class="rsvp-btns">
+                <button class="btn-going" onclick="submitRsvp('attending')">✅ I'm Going</button>
+                <button class="btn-no" onclick="submitRsvp('not_attending')">❌ Can't Make It</button>
+            </div>
+            <div class="rsvp-msg" id="rsvp-msg"></div>
+            <a class="gcal-btn" id="gcal-btn" href="#" target="_blank">📅 Add to Google Calendar</a>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- WHO'S GOING -->
+    <div class="reveal">
+        <div class="s-eyebrow">Attendees</div>
+        <div class="s-headline">Who's Going</div>
+        <div class="s-sub">Members who have confirmed attendance.</div>
+        <div class="guests-box">
+            <div class="guests-top">
+                <div class="guests-title">Confirmed Attendees</div>
+                <div class="guests-count" id="guests-count">{{ counts.attending }} going</div>
+            </div>
+            <div id="guest-list">
+                {% if attending %}
+                {% set colors = ['#f0b842','#7c6af7','#4ade80','#f87171','#fb923c','#67e8f9','#a78bfa','#34d399'] %}
+                {% for m in attending %}
+                <div class="guest">
+                    <div class="g-av" style="background:{{ colors[loop.index0 % 8] }}">{{ m.name[0] }}</div>
+                    <div class="g-name">{{ m.name }}</div>
                 </div>
-                <div class="info-row">
-                    <div class="info-icon">🕐</div>
-                    <div>
-                        <div class="info-lbl">Time</div>
-                        <div class="info-val">{{ event.time }}</div>
-                    </div>
-                </div>
-                <div class="info-row">
-                    <div class="info-icon">📍</div>
-                    <div>
-                        <div class="info-lbl">Location</div>
-                        <div class="info-val">{{ event.location }}</div>
-                    </div>
-                </div>
-                {% if event.description %}
-                <div class="info-row">
-                    <div class="info-icon">📝</div>
-                    <div>
-                        <div class="info-lbl">Description</div>
-                        <div class="info-val">{{ event.description }}</div>
-                    </div>
-                </div>
+                {% endfor %}
+                {% else %}
+                <div class="no-guests">No RSVPs yet — be the first 🎉</div>
                 {% endif %}
             </div>
         </div>
+    </div>
 
+    <!-- BUDGET (admin only) -->
+    <div id="budget-section" style="display:none">
         <div class="divider"></div>
-
-        <!-- RSVP -->
         <div class="reveal">
-            <div class="s-eyebrow">Attendance</div>
-            <div class="s-headline">RSVP</div>
-            <div class="s-sub">Let us know if you're coming. You can change your response at any time.</div>
-            <div class="rsvp-box">
-                <input type="email" id="rsvp-email" class="inp" placeholder="Enter your club email address">
-                <div class="rsvp-btns">
-                    <button class="btn-going" onclick="submitRsvp('attending')">✅ I'm Going</button>
-                    <button class="btn-no" onclick="submitRsvp('not_attending')">❌ Can't Make It</button>
+            <div class="s-eyebrow">Finance</div>
+            <div class="s-headline">Event Budget</div>
+            <div class="s-sub">Track spending and build your SABC budget submission for this event.</div>
+
+            <!-- SABC BUDGET BUILDER BUTTON -->
+            <button class="btn-sabc-open" onclick="openBudgetBuilder()">
+                📋 Build SABC Budget Packet
+            </button>
+
+            <div class="budget-hero">
+                <div class="budget-orb"></div>
+                <div class="b-lbl">Remaining Budget</div>
+                <div class="b-amount"><span class="dollar">$</span><span class="val" id="b-remaining">{{ "%.2f"|format(budget.remaining) }}</span></div>
+                <div class="b-sub" id="b-sub">of ${{ "%.2f"|format(budget.budget) }} total budget</div>
+                <div class="prog-bg"><div class="prog-fill" id="b-bar" style="width:{{ budget.percent_used }}%"></div></div>
+                <div class="prog-lbls">
+                    <span id="b-spent-lbl">${{ "%.2f"|format(budget.spent) }} spent</span>
+                    <span id="b-pct-lbl">{{ budget.percent_used }}% used</span>
                 </div>
-                <div class="rsvp-msg" id="rsvp-msg"></div>
-                <a class="gcal-btn" id="gcal-btn" href="#" target="_blank">📅 Add to Google Calendar</a>
+                <div class="b-stats">
+                    <div class="b-stat"><div class="b-stat-n g" id="b-total">${{ "%.2f"|format(budget.budget) }}</div><div class="b-stat-l">Budget</div></div>
+                    <div class="b-stat"><div class="b-stat-n r" id="b-spent">${{ "%.2f"|format(budget.spent) }}</div><div class="b-stat-l">Spent</div></div>
+                    <div class="b-stat"><div class="b-stat-n a" id="b-rem2">${{ "%.2f"|format(budget.remaining) }}</div><div class="b-stat-l">Left</div></div>
+                </div>
             </div>
-        </div>
 
-        <div class="divider"></div>
-
-        <!-- WHO'S GOING -->
-        <div class="reveal">
-            <div class="s-eyebrow">Attendees</div>
-            <div class="s-headline">Who's Going</div>
-            <div class="s-sub">Members who have confirmed attendance.</div>
-            <div class="guests-box">
-                <div class="guests-top">
-                    <div class="guests-title">Confirmed Attendees</div>
-                    <div class="guests-count" id="guests-count">{{ counts.attending }} going</div>
+            <div class="form-box">
+                <div class="form-lbl">Set Budget</div>
+                <div class="form-2col">
+                    <input class="inp" id="b-input" type="number" placeholder="Amount ($)" style="margin:0"
+                           value="{{ '%.2f'|format(budget.budget) if budget.budget > 0 else '' }}">
+                    <button class="btn-gold" onclick="setBudget()">Set Budget</button>
                 </div>
-                <div id="guest-list">
-                    {% if attending %}
-                    {% set colors = ['#f0b842','#7c6af7','#4ade80','#f87171','#fb923c','#67e8f9','#a78bfa','#34d399'] %}
-                    {% for m in attending %}
-                    <div class="guest">
-                        <div class="g-av" style="background:{{ colors[loop.index0 % 8] }}">{{ m.name[0] }}</div>
-                        <div class="g-name">{{ m.name }}</div>
+                <div class="form-msg" id="b-msg"></div>
+            </div>
+
+            <div class="form-box">
+                <div class="form-lbl">Log Expense</div>
+                <div class="form-2col">
+                    <input class="inp" id="e-amount" type="number" placeholder="Amount ($)" style="margin:0">
+                    <select class="inp" id="e-cat" style="margin:0;cursor:pointer">
+                        <option value="">Category</option>
+                        <option value="Food & Drinks">🍕 Food & Drinks</option>
+                        <option value="Supplies">📦 Supplies</option>
+                        <option value="Speaker">🎤 Speaker</option>
+                        <option value="Marketing">📢 Marketing</option>
+                        <option value="Travel">✈️ Travel</option>
+                        <option value="Technology">💻 Technology</option>
+                        <option value="Venue">🏛️ Venue</option>
+                        <option value="Other">📌 Other</option>
+                    </select>
+                </div>
+                <input class="inp" id="e-desc" placeholder="Description" style="margin-top:10px;margin-bottom:10px">
+                <button class="btn-gold" onclick="logExpense()">+ Log Expense</button>
+                <div class="form-msg" id="e-msg"></div>
+            </div>
+
+            <div class="form-box">
+                <div class="form-lbl">Transactions</div>
+                <div class="tx-list" id="b-tx">
+                    {% if expenses %}
+                    {% set icons = {'Food & Drinks':'🍕','Supplies':'📦','Speaker':'🎤','Marketing':'📢','Travel':'✈️','Technology':'💻','Venue':'🏛️','Other':'📌'} %}
+                    {% for exp in expenses %}
+                    <div class="tx-row">
+                        <div class="tx-icon">{{ icons.get(exp.category,'📌') }}</div>
+                        <div>
+                            <div class="tx-desc">{{ exp.description }}</div>
+                            <div class="tx-meta">{{ exp.category }} · {{ exp.logged_at[:10] }}</div>
+                        </div>
+                        <div class="tx-amt">-${{ "%.2f"|format(exp.amount) }}</div>
                     </div>
                     {% endfor %}
                     {% else %}
-                    <div class="no-guests">No RSVPs yet — be the first 🎉</div>
+                    <div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">No expenses yet</div>
                     {% endif %}
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- BUDGET (admin only) -->
-        <div id="budget-section" style="display:none">
-            <div class="divider"></div>
-            <div class="reveal">
-                <div class="s-eyebrow">Finance</div>
-                <div class="s-headline">Event Budget</div>
-                <div class="s-sub">Track spending and manage the budget for this event.</div>
+    <!-- ADMIN EDIT (admin only) -->
+    <div id="admin-section" style="display:none">
+        <div class="divider"></div>
+        <div class="reveal">
+            <div class="s-eyebrow">Admin</div>
+            <div class="s-headline">Edit Event</div>
+            <div class="s-sub">Update event details. Changes are saved immediately.</div>
+            <div class="edit-box">
+                <div class="edit-lbl">Event Details</div>
+                <input class="inp" id="e-title" value="{{ event.title }}" placeholder="Title">
+                <input class="inp" id="e-date" value="{{ event.date }}" placeholder="Date">
+                <input class="inp" id="e-time" value="{{ event.time }}" placeholder="Time">
+                <input class="inp" id="e-location" value="{{ event.location }}" placeholder="Location">
+                <input class="inp" id="e-desc-ed" value="{{ event.description or '' }}" placeholder="Description">
+                <button class="btn-save" onclick="saveEvent()">Save Changes</button>
+            </div>
+        </div>
+    </div>
 
-                <div class="budget-hero">
-                    <div class="budget-orb"></div>
-                    <div class="b-lbl">Remaining Budget</div>
-                    <div class="b-amount">
-                        <span class="dollar">$</span><span class="val" id="b-remaining">{{
-                            "%.2f"|format(budget.remaining) }}</span>
+    <div class="footer">PULSEAI · FORDHAM UNIVERSITY · 2026</div>
+</div>
+
+<!-- SABC BUDGET BUILDER OVERLAY + PANEL -->
+<div class="bb-overlay" id="bb-overlay" onclick="closeBudgetBuilder()"></div>
+<div class="bb-panel" id="bb-panel">
+    <div class="bb-inner">
+        <div class="bb-handle"></div>
+        <div class="bb-header">
+            <div>
+                <div class="bb-title">📋 SABC Budget Builder</div>
+                <div class="bb-subtitle" id="bb-event-name-sub">Building budget for this event</div>
+            </div>
+            <button class="btn-close-bb" onclick="closeBudgetBuilder()">✕</button>
+        </div>
+
+        <div class="bb-cols">
+
+            <!-- LEFT: ADD ITEMS -->
+            <div>
+                <!-- URL SCRAPE -->
+                <div class="bb-section">
+                    <div class="bb-section-label">Paste Product URL</div>
+                    <input class="bb-inp" id="bb-url" type="url" placeholder="https://amazon.com/...">
+                    <div class="toggle-wrap">
+                        <label class="toggle">
+                            <input type="checkbox" id="bb-delivery" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="toggle-label" id="delivery-label">Delivered to Fordham (tax exempt)</span>
                     </div>
-                    <div class="b-sub" id="b-sub">of ${{ "%.2f"|format(budget.budget) }} total budget</div>
-                    <div class="prog-bg">
-                        <div class="prog-fill" id="b-bar" style="width:{{ budget.percent_used }}%"></div>
-                    </div>
-                    <div class="prog-lbls">
-                        <span id="b-spent-lbl">${{ "%.2f"|format(budget.spent) }} spent</span>
-                        <span id="b-pct-lbl">{{ budget.percent_used }}% used</span>
-                    </div>
-                    <div class="b-stats">
-                        <div class="b-stat">
-                            <div class="b-stat-n g" id="b-total">${{ "%.2f"|format(budget.budget) }}</div>
-                            <div class="b-stat-l">Budget</div>
-                        </div>
-                        <div class="b-stat">
-                            <div class="b-stat-n r" id="b-spent">${{ "%.2f"|format(budget.spent) }}</div>
-                            <div class="b-stat-l">Spent</div>
-                        </div>
-                        <div class="b-stat">
-                            <div class="b-stat-n a" id="b-rem2">${{ "%.2f"|format(budget.remaining) }}</div>
-                            <div class="b-stat-l">Left</div>
-                        </div>
-                    </div>
+                    <button class="btn-scrape" id="btn-scrape" onclick="scrapeItem()">🔍 Scrape Item Info</button>
+                    <div class="scrape-status" id="scrape-status"></div>
                 </div>
 
-                <div class="form-box">
-                    <div class="form-lbl">Set Budget</div>
-                    <div class="form-2col">
-                        <input class="inp" id="b-input" type="number" placeholder="Amount ($)" style="margin:0"
-                            value="{{ '%.2f'|format(budget.budget) if budget.budget > 0 else '' }}">
-                        <button class="btn-gold" onclick="setBudget()">Set Budget</button>
+                <div class="bb-divider-text">or enter manually</div>
+
+                <!-- MANUAL ENTRY -->
+                <div class="bb-section">
+                    <div class="bb-section-label">Manual Entry</div>
+                    <input class="bb-inp" id="m-name" placeholder="Item name / description">
+                    <div class="bb-row-2">
+                        <input class="bb-inp" id="m-price" type="number" step="0.01" placeholder="Unit price ($)" style="margin:0">
+                        <input class="bb-inp" id="m-qty" type="number" min="1" value="1" placeholder="Qty" style="margin:0">
                     </div>
-                    <div class="form-msg" id="b-msg"></div>
+                    <input class="bb-inp" id="m-vendor" placeholder="Vendor (e.g. Amazon, Staples)">
+                    <div class="toggle-wrap">
+                        <label class="toggle">
+                            <input type="checkbox" id="m-delivery" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="toggle-label">Delivered to Fordham (tax exempt)</span>
+                    </div>
+                    <button class="btn-add-item" onclick="addManualItem()">+ Add Item</button>
                 </div>
 
-                <div class="form-box">
-                    <div class="form-lbl">Log Expense</div>
-                    <div class="form-2col">
-                        <input class="inp" id="e-amount" type="number" placeholder="Amount ($)" style="margin:0">
-                        <select class="inp" id="e-cat" style="margin:0;cursor:pointer">
-                            <option value="">Category</option>
-                            <option value="Food & Drinks">🍕 Food & Drinks</option>
-                            <option value="Supplies">📦 Supplies</option>
-                            <option value="Speaker">🎤 Speaker</option>
-                            <option value="Marketing">📢 Marketing</option>
-                            <option value="Travel">✈️ Travel</option>
-                            <option value="Technology">💻 Technology</option>
-                            <option value="Venue">🏛️ Venue</option>
-                            <option value="Other">📌 Other</option>
+                <!-- SABC COMPLIANCE -->
+                <div class="bb-section">
+                    <div class="bb-section-label">SABC Compliance Check</div>
+                    <div class="bb-row-2" style="margin-bottom:8px">
+                        <input class="bb-inp" id="bb-attendance" type="number" placeholder="Expected attendance" style="margin:0">
+                        <select class="bb-inp" id="bb-event-type" style="margin:0;cursor:pointer">
+                            <option value="social">Social</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="speaker">Speaker Event</option>
+                            <option value="performance">Performance</option>
+                            <option value="dinner outing">Dinner Outing</option>
+                            <option value="other">Other</option>
                         </select>
                     </div>
-                    <input class="inp" id="e-desc" placeholder="Description" style="margin-top:10px;margin-bottom:10px">
-                    <button class="btn-gold" onclick="logExpense()">+ Log Expense</button>
-                    <div class="form-msg" id="e-msg"></div>
+                    <div class="bb-row-3" style="margin-bottom:8px">
+                        <label class="toggle-wrap" style="gap:6px;margin:0">
+                            <label class="toggle"><input type="checkbox" id="bb-food-delivery"><span class="toggle-slider"></span></label>
+                            <span style="font-size:12px;color:var(--text2)">Food delivery</span>
+                        </label>
+                        <label class="toggle-wrap" style="gap:6px;margin:0">
+                            <label class="toggle"><input type="checkbox" id="bb-performer"><span class="toggle-slider"></span></label>
+                            <span style="font-size:12px;color:var(--text2)">Performer/DJ</span>
+                        </label>
+                        <label class="toggle-wrap" style="gap:6px;margin:0">
+                            <label class="toggle"><input type="checkbox" id="bb-alcohol"><span class="toggle-slider"></span></label>
+                            <span style="font-size:12px;color:var(--text2)">Alcohol</span>
+                        </label>
+                    </div>
+                    <input class="bb-inp" id="bb-food-total" type="number" step="0.01" placeholder="Food delivery total ($) — for tip calc">
+                    <button class="btn-add-item" onclick="runCompliance()">⚡ Run Compliance Check</button>
+                    <div id="compliance-flags" style="margin-top:10px"></div>
                 </div>
+            </div>
 
-                <div class="form-box">
-                    <div class="form-lbl">Transactions</div>
-                    <div class="tx-list" id="b-tx">
-                        {% if expenses %}
-                        {% set icons = {'Food &
-                        Drinks':'🍕','Supplies':'📦','Speaker':'🎤','Marketing':'📢','Travel':'✈️','Technology':'💻','Venue':'🏛️','Other':'📌'}
-                        %}
-                        {% for exp in expenses %}
-                        <div class="tx-row">
-                            <div class="tx-icon">{{ icons.get(exp.category,'📌') }}</div>
-                            <div>
-                                <div class="tx-desc">{{ exp.description }}</div>
-                                <div class="tx-meta">{{ exp.category }} · {{ exp.logged_at[:10] }}</div>
-                            </div>
-                            <div class="tx-amt">-${{ "%.2f"|format(exp.amount) }}</div>
-                        </div>
-                        {% endfor %}
-                        {% else %}
-                        <div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">No expenses yet
-                        </div>
-                        {% endif %}
+            <!-- RIGHT: ITEMS LIST + RAMS INVOLVED PACKET -->
+            <div>
+                <!-- ITEMS LIST -->
+                <div class="bb-section">
+                    <div class="bb-section-label">Budget Items <span id="item-count" style="color:var(--text3);font-weight:400;letter-spacing:0">(0)</span></div>
+                    <div class="bb-item-list" id="bb-item-list">
+                        <div class="bb-empty-items">Add items using the URL scraper or manual entry →</div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- ADMIN EDIT (admin only) -->
-        <div id="admin-section" style="display:none">
-            <div class="divider"></div>
-            <div class="reveal">
-                <div class="s-eyebrow">Admin</div>
-                <div class="s-headline">Edit Event</div>
-                <div class="s-sub">Update event details. Changes are saved immediately.</div>
-                <div class="edit-box">
-                    <div class="edit-lbl">Event Details</div>
-                    <input class="inp" id="e-title" value="{{ event.title }}" placeholder="Title">
-                    <input class="inp" id="e-date" value="{{ event.date }}" placeholder="Date">
-                    <input class="inp" id="e-time" value="{{ event.time }}" placeholder="Time">
-                    <input class="inp" id="e-location" value="{{ event.location }}" placeholder="Location">
-                    <input class="inp" id="e-desc-ed" value="{{ event.description or '' }}" placeholder="Description">
-                    <button class="btn-save" onclick="saveEvent()">Save Changes</button>
+                <!-- RAMS INVOLVED PACKET -->
+                <div class="bb-section" id="ri-section" style="display:none">
+                    <div class="bb-section-label">Rams Involved — Ready to Submit</div>
+
+                    <div class="ri-field" onclick="copyField(this)">
+                        <div class="ri-copy-hint">click to copy</div>
+                        <div class="ri-field-label">Event Name</div>
+                        <div class="ri-field-value" id="ri-event-name"></div>
+                    </div>
+                    <div class="ri-field" onclick="copyField(this)">
+                        <div class="ri-copy-hint">click to copy</div>
+                        <div class="ri-field-label">Amount Requested</div>
+                        <div class="ri-field-value" id="ri-amount"></div>
+                    </div>
+                    <div class="ri-field">
+                        <div class="ri-field-label">Budget Period</div>
+                        <div class="ri-field-value" style="color:var(--text3)">— Select in Rams Involved portal —</div>
+                    </div>
+                    <div class="ri-field">
+                        <div class="ri-field-label">Mission <span style="color:var(--text3);font-size:10px">(edit below)</span></div>
+                        <textarea class="ri-field-value editable" id="ri-mission" placeholder="Describe your club's mission..."></textarea>
+                    </div>
+                    <div class="ri-field">
+                        <div class="ri-field-label">Community Benefit <span style="color:var(--text3);font-size:10px">(edit below)</span></div>
+                        <textarea class="ri-field-value editable" id="ri-benefit" placeholder="How does this event benefit the community?"></textarea>
+                    </div>
+                    <div class="ri-field" onclick="copyField(this)">
+                        <div class="ri-copy-hint">click to copy</div>
+                        <div class="ri-field-label">Event Date</div>
+                        <div class="ri-field-value" id="ri-date"></div>
+                    </div>
+                    <div class="ri-field" onclick="copyField(this)">
+                        <div class="ri-copy-hint">click to copy</div>
+                        <div class="ri-field-label">Expected Attendance</div>
+                        <div class="ri-field-value" id="ri-attendance">— Enter attendance above —</div>
+                    </div>
+
+                    <!-- Line items table -->
+                    <div style="background:var(--card2);border:0.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px">
+                        <div style="padding:10px 14px;border-bottom:0.5px solid var(--border)">
+                            <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px">Itemized Line Items</div>
+                        </div>
+                        <table class="li-table" id="ri-line-items">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Item</th>
+                                    <th>Vendor</th>
+                                    <th>Qty</th>
+                                    <th>Unit $</th>
+                                    <th>Total</th>
+                                    <th>Tax</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ri-items-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="ri-total">
+                        <span class="ri-total-label">Total Amount Requested</span>
+                        <span class="ri-total-amount" id="ri-total">$0.00</span>
+                    </div>
+
+                    <button class="btn-export-csv" id="btn-export" onclick="exportCSV()" style="margin-top:16px" disabled>
+                        ⬇ Export CSV — Spending Documentation
+                    </button>
                 </div>
             </div>
         </div>
-
-        <div class="footer">PULSEAI · FORDHAM UNIVERSITY · 2026</div>
-
     </div>
+</div>
 
-    <script>
-        const EID = {{ event.id }};
-        const ETITLE = {{ event.title| tojson }};
-        const EDATE = {{ event.date| tojson }};
-        const ETIME = {{ event.time| tojson }};
-        const ELOC = {{ event.location| tojson }};
-        const COLORS = ['#f0b842', '#7c6af7', '#4ade80', '#f87171', '#fb923c', '#67e8f9', '#a78bfa', '#34d399'];
-        const CAT_ICONS = { 'Food & Drinks': '🍕', 'Supplies': '📦', 'Speaker': '🎤', 'Marketing': '📢', 'Travel': '✈️', 'Technology': '💻', 'Venue': '🏛️', 'Other': '📌' };
+<script>
+    const EID    = {{ event.id }};
+    const ETITLE = {{ event.title|tojson }};
+    const EDATE  = {{ event.date|tojson }};
+    const ETIME  = {{ event.time|tojson }};
+    const ELOC   = {{ event.location|tojson }};
+    const COLORS = ['#f0b842','#7c6af7','#4ade80','#f87171','#fb923c','#67e8f9','#a78bfa','#34d399'];
+    const CAT_ICONS = {'Food & Drinks':'🍕','Supplies':'📦','Speaker':'🎤','Marketing':'📢','Travel':'✈️','Technology':'💻','Venue':'🏛️','Other':'📌'};
 
-        // ── SCROLL REVEAL ─────────────────────────────────────────────────────
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(e => {
-                if (e.isIntersecting) {
-                    e.target.classList.add('visible');
-                    observer.unobserve(e.target);
-                }
-            });
-        }, { threshold: 0.15, rootMargin: '0px 0px -80px 0px' });
+    // SCROLL REVEAL
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.15, rootMargin: '0px 0px -80px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    // GOOGLE CALENDAR
+    function buildGCal() {
+        const [y,mo,d] = EDATE.split('-'); const [h,mi] = ETIME.split(':');
+        const s = y+mo+d+'T'+h+mi+'00'; const eh = String(parseInt(h)+1).padStart(2,'0');
+        const e = y+mo+d+'T'+eh+mi+'00';
+        const p = new URLSearchParams({action:'TEMPLATE',text:ETITLE,dates:s+'/'+e,details:'RSVP: '+window.location.href,location:ELOC});
+        return 'https://calendar.google.com/calendar/render?'+p.toString();
+    }
+    document.getElementById('gcal-btn').href = buildGCal();
 
-        // ── GOOGLE CALENDAR ───────────────────────────────────────────────────
-        function buildGCal() {
-            const [y, mo, d] = EDATE.split('-');
-            const [h, mi] = ETIME.split(':');
-            const s = y + mo + d + 'T' + h + mi + '00';
-            const eh = String(parseInt(h) + 1).padStart(2, '0');
-            const e = y + mo + d + 'T' + eh + mi + '00';
-            const p = new URLSearchParams({ action: 'TEMPLATE', text: ETITLE, dates: s + '/' + e, details: 'RSVP: ' + window.location.href, location: ELOC });
-            return 'https://calendar.google.com/calendar/render?' + p.toString();
+    // ADMIN TOGGLE
+    let adminOn = new URLSearchParams(window.location.search).get('admin') === 'true';
+    function toggleAdmin() { adminOn = !adminOn; applyAdmin(); }
+    function applyAdmin() {
+        const btn    = document.getElementById('admin-btn');
+        const budget = document.getElementById('budget-section');
+        const admin  = document.getElementById('admin-section');
+        const upload = document.getElementById('upload-lbl');
+        if (adminOn) {
+            btn.classList.add('on'); btn.textContent = '⚙ Admin ON';
+            budget.style.display = 'block'; admin.style.display = 'block'; upload.style.display = 'block';
+            budget.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+            admin.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        } else {
+            btn.classList.remove('on'); btn.textContent = '⚙ Admin';
+            budget.style.display = 'none'; admin.style.display = 'none'; upload.style.display = 'none';
         }
-        document.getElementById('gcal-btn').href = buildGCal();
+    }
+    applyAdmin();
 
-        // ── ADMIN TOGGLE ──────────────────────────────────────────────────────
-        let adminOn = new URLSearchParams(window.location.search).get('admin') === 'true';
+    // DELIVERY TOGGLE LABEL
+    document.getElementById('bb-delivery').addEventListener('change', function() {
+        document.getElementById('delivery-label').textContent = this.checked
+            ? 'Delivered to Fordham (tax exempt)'
+            : 'Pickup from store (8.875% tax added)';
+    });
 
-        function toggleAdmin() {
-            adminOn = !adminOn;
-            applyAdmin();
-        }
-        function applyAdmin() {
-            const btn = document.getElementById('admin-btn');
-            const budget = document.getElementById('budget-section');
-            const admin = document.getElementById('admin-section');
-            const upload = document.getElementById('upload-lbl');
-            if (adminOn) {
-                btn.classList.add('on');
-                btn.textContent = '⚙ Admin ON';
-                budget.style.display = 'block';
-                admin.style.display = 'block';
-                upload.style.display = 'block';
-                budget.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-                admin.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-            } else {
-                btn.classList.remove('on');
-                btn.textContent = '⚙ Admin';
-                budget.style.display = 'none';
-                admin.style.display = 'none';
-                upload.style.display = 'none';
+    // RSVP
+    function submitRsvp(status) {
+        const email = document.getElementById('rsvp-email').value.trim().toLowerCase();
+        if (!email) { showRsvpMsg('Enter your club email.','err'); return; }
+        fetch('/api/rsvp/event/'+EID, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({email, status})
+        }).then(r=>r.json()).then(data => {
+            if (data.error) { showRsvpMsg(data.error,'err'); return; }
+            showRsvpMsg(status==='attending'?"You're going! 🎉":"Got it — you can't make it.",'ok');
+            if (data.counts) {
+                document.getElementById('stat-going').textContent = data.counts.attending;
+                document.getElementById('stat-not').textContent   = data.counts.not_attending;
+                document.getElementById('guests-count').textContent = data.counts.attending+' going';
             }
-        }
-        applyAdmin();
+            if (status==='attending' && data.member_name) addGuest(data.member_name);
+        }).catch(()=>showRsvpMsg('Something went wrong.','err'));
+    }
+    function showRsvpMsg(t,c) { const el=document.getElementById('rsvp-msg'); el.textContent=t; el.className='rsvp-msg '+c; }
+    function addGuest(name) {
+        const list=document.getElementById('guest-list'); const none=list.querySelector('.no-guests'); if(none) none.remove();
+        const i=list.children.length%COLORS.length; const d=document.createElement('div'); d.className='guest';
+        d.innerHTML=`<div class="g-av" style="background:${COLORS[i]}">${name[0]}</div><div class="g-name">${name}</div>`;
+        list.appendChild(d);
+    }
 
-        // ── RSVP ──────────────────────────────────────────────────────────────
-        function submitRsvp(status) {
-            const email = document.getElementById('rsvp-email').value.trim().toLowerCase();
-            if (!email) { showRsvpMsg('Enter your club email.', 'err'); return; }
-            fetch('/api/rsvp/event/' + EID, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, status })
-            }).then(r => r.json()).then(data => {
-                if (data.error) { showRsvpMsg(data.error, 'err'); return; }
-                showRsvpMsg(status === 'attending' ? "You're going! 🎉" : "Got it — you can't make it.", 'ok');
-                if (data.counts) {
-                    document.getElementById('stat-going').textContent = data.counts.attending;
-                    document.getElementById('stat-not').textContent = data.counts.not_attending;
-                    document.getElementById('guests-count').textContent = data.counts.attending + ' going';
-                }
-                if (status === 'attending' && data.member_name) addGuest(data.member_name);
-            }).catch(() => showRsvpMsg('Something went wrong.', 'err'));
-        }
-        function showRsvpMsg(t, c) {
-            const el = document.getElementById('rsvp-msg');
-            el.textContent = t; el.className = 'rsvp-msg ' + c;
-        }
-        function addGuest(name) {
-            const list = document.getElementById('guest-list');
-            const none = list.querySelector('.no-guests');
-            if (none) none.remove();
-            const i = list.children.length % COLORS.length;
-            const d = document.createElement('div');
-            d.className = 'guest';
-            d.innerHTML = `<div class="g-av" style="background:${COLORS[i]}">${name[0]}</div><div class="g-name">${name}</div>`;
-            list.appendChild(d);
-        }
-
-        // ── ADMIN SAVE ────────────────────────────────────────────────────────
-        function saveEvent() {
-            const p = {
-                title: document.getElementById('e-title').value,
-                date: document.getElementById('e-date').value,
-                time: document.getElementById('e-time').value,
-                location: document.getElementById('e-location').value,
-                description: document.getElementById('e-desc-ed').value
-            };
-            fetch('/api/event/' + EID, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(p)
-            }).then(r => r.json()).then(d => {
-                if (d.success) {
-                    document.getElementById('hero-title').textContent = p.title;
-                    document.getElementById('h-title').textContent = p.title;
-                    alert('✅ Saved!');
-                }
+    // ADMIN SAVE
+    function saveEvent() {
+        const p = { title:document.getElementById('e-title').value, date:document.getElementById('e-date').value,
+                    time:document.getElementById('e-time').value, location:document.getElementById('e-location').value,
+                    description:document.getElementById('e-desc-ed').value };
+        fetch('/api/event/'+EID, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(p) })
+            .then(r=>r.json()).then(d => {
+                if (d.success) { document.getElementById('hero-title').textContent=p.title; document.getElementById('h-title').textContent=p.title; alert('✅ Saved!'); }
             });
-        }
+    }
 
-        // ── FLYER UPLOAD ──────────────────────────────────────────────────────
-        function uploadFlyer(input) {
-            if (!input.files || !input.files[0]) return;
-            const fd = new FormData();
-            fd.append('flyer', input.files[0]);
-            fetch('/api/upload-flyer/' + EID, { method: 'POST', body: fd })
-                .then(r => r.json()).then(d => {
-                    if (d.success) {
-                        const hero = document.getElementById('hero');
-                        hero.style.background = '#000';
-                        hero.style.padding = '0';
-                        hero.innerHTML = `
-        <img src="${d.flyer_url}" style="width:100%;height:100%;object-fit:cover;opacity:0.85">
-        <label class="hero-upload-label" for="flyer-file" style="display:block">📷 Change</label>
-        <input type="file" id="flyer-file" accept="image/*" onchange="uploadFlyer(this)" style="display:none">
-      `;
-                    }
+    // FLYER
+    function uploadFlyer(input) {
+        if (!input.files||!input.files[0]) return;
+        const fd=new FormData(); fd.append('flyer',input.files[0]);
+        fetch('/api/upload-flyer/'+EID,{method:'POST',body:fd}).then(r=>r.json()).then(d => {
+            if (d.success) {
+                const hero=document.getElementById('hero'); hero.style.background='#000'; hero.style.padding='0';
+                hero.innerHTML=`<img src="${d.flyer_url}" style="width:100%;height:100%;object-fit:cover;opacity:0.85">
+                    <label class="hero-upload-label" for="flyer-file" style="display:block">📷 Change</label>
+                    <input type="file" id="flyer-file" accept="image/*" onchange="uploadFlyer(this)" style="display:none">`;
+            }
+        });
+    }
+
+    // BUDGET
+    function setBudget() {
+        const amount=parseFloat(document.getElementById('b-input').value);
+        const msg=document.getElementById('b-msg');
+        if (!amount||amount<=0) { msg.textContent='Enter a valid amount.'; msg.style.color='var(--red)'; return; }
+        fetch('/api/event/'+EID+'/budget', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({amount}) })
+            .then(r=>r.json()).then(data => {
+                if (data.success) { msg.textContent=`✅ Budget set to $${amount.toFixed(2)}`; msg.style.color='var(--green)'; updateBudget(data.summary); setTimeout(()=>msg.textContent='',3000); }
+            }).catch(()=>{msg.textContent='Error.';msg.style.color='var(--red)';});
+    }
+    function logExpense() {
+        const amount=parseFloat(document.getElementById('e-amount').value);
+        const cat=document.getElementById('e-cat').value;
+        const desc=document.getElementById('e-desc').value.trim();
+        const msg=document.getElementById('e-msg');
+        if (!amount||amount<=0) { msg.textContent='Enter amount.'; msg.style.color='var(--red)'; return; }
+        if (!cat) { msg.textContent='Select category.'; msg.style.color='var(--red)'; return; }
+        if (!desc) { msg.textContent='Add description.'; msg.style.color='var(--red)'; return; }
+        fetch('/api/event/'+EID+'/expense', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({amount,category:cat,description:desc}) })
+            .then(r=>r.json()).then(data => {
+                if (data.success) {
+                    msg.textContent=`✅ $${amount.toFixed(2)} logged`; msg.style.color='var(--green)';
+                    document.getElementById('e-amount').value=''; document.getElementById('e-cat').value=''; document.getElementById('e-desc').value='';
+                    addTxRow({amount,category:cat,description:desc}); updateBudget(data.summary); setTimeout(()=>msg.textContent='',3000);
+                }
+            }).catch(()=>{msg.textContent='Error.';msg.style.color='var(--red)';});
+    }
+    function updateBudget(s) {
+        document.getElementById('b-remaining').textContent=s.remaining.toFixed(2);
+        document.getElementById('b-sub').textContent=`of $${s.budget.toFixed(2)} total budget`;
+        document.getElementById('b-bar').style.width=s.percent_used+'%';
+        document.getElementById('b-spent-lbl').textContent=`$${s.spent.toFixed(2)} spent`;
+        document.getElementById('b-pct-lbl').textContent=`${s.percent_used}% used`;
+        document.getElementById('b-total').textContent=`$${s.budget.toFixed(2)}`;
+        document.getElementById('b-spent').textContent=`$${s.spent.toFixed(2)}`;
+        document.getElementById('b-rem2').textContent=`$${s.remaining.toFixed(2)}`;
+    }
+    function addTxRow(exp) {
+        const c=document.getElementById('b-tx'); const empty=c.querySelector('div[style*="text-align"]'); if(empty) empty.remove();
+        const row=document.createElement('div'); row.className='tx-row';
+        row.innerHTML=`<div class="tx-icon">${CAT_ICONS[exp.category]||'📌'}</div><div><div class="tx-desc">${exp.description}</div><div class="tx-meta">${exp.category} · ${new Date().toISOString().slice(0,10)}</div></div><div class="tx-amt">-$${parseFloat(exp.amount).toFixed(2)}</div>`;
+        c.prepend(row);
+    }
+
+    // ── SABC BUDGET BUILDER ───────────────────────────────────────────────────
+    let bbItems = []; // {name, vendor, url, unit_price, quantity, tax_exempt, tax_amount, line_total}
+
+    function openBudgetBuilder() {
+        document.getElementById('bb-overlay').classList.add('visible');
+        document.getElementById('bb-panel').classList.add('visible');
+        document.getElementById('bb-event-name-sub').textContent = 'Building budget for: ' + ETITLE;
+        document.getElementById('ri-event-name').textContent = ETITLE;
+        document.getElementById('ri-date').textContent = EDATE;
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeBudgetBuilder() {
+        document.getElementById('bb-overlay').classList.remove('visible');
+        document.getElementById('bb-panel').classList.remove('visible');
+        document.body.style.overflow = '';
+    }
+
+    // URL SCRAPE
+    async function scrapeItem() {
+        const url = document.getElementById('bb-url').value.trim();
+        if (!url) { setStatus('Enter a product URL first.','err'); return; }
+        const delivery = document.getElementById('bb-delivery').checked;
+        const btn = document.getElementById('btn-scrape');
+        btn.disabled = true; btn.textContent = '⏳ Scraping...';
+        setStatus('Fetching product info...','loading');
+        try {
+            const res = await fetch('/api/budget/scrape', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({url, delivery_to_fordham: delivery})
+            });
+            const data = await res.json();
+            if (!data.success) { setStatus(data.error || 'Could not scrape this page.','err'); return; }
+            const item = data.line_item;
+            addItem({
+                name: item.product_name, vendor: item.vendor, url: item.url,
+                unit_price: item.unit_price, quantity: 1,
+                tax_exempt: item.tax_exempt,
+                tax_amount: item.tax_line ? item.tax_line.amount : 0,
+                line_total: item.line_total
+            });
+            setStatus(`✓ Added: ${item.product_name.slice(0,40)}`, 'ok');
+            document.getElementById('bb-url').value = '';
+        } catch(e) {
+            setStatus('Network error — check your connection.','err');
+        }
+        btn.disabled = false; btn.textContent = '🔍 Scrape Item Info';
+    }
+
+    function setStatus(msg, type) {
+        const el = document.getElementById('scrape-status');
+        el.textContent = msg; el.className = 'scrape-status ' + (type || '');
+        if (type === 'ok') setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 4000);
+    }
+
+    // MANUAL ADD
+    function addManualItem() {
+        const name  = document.getElementById('m-name').value.trim();
+        const price = parseFloat(document.getElementById('m-price').value);
+        const qty   = parseInt(document.getElementById('m-qty').value) || 1;
+        const vendor= document.getElementById('m-vendor').value.trim() || '—';
+        const delivery = document.getElementById('m-delivery').checked;
+        if (!name) { alert('Enter an item name.'); return; }
+        if (!price || price <= 0) { alert('Enter a valid price.'); return; }
+        const NYC_TAX = 0.08875;
+        const tax_amount = delivery ? 0 : Math.round(price * NYC_TAX * 100) / 100;
+        const line_total = Math.round((price * qty + (delivery ? 0 : tax_amount)) * 100) / 100;
+        addItem({ name, vendor, url: '', unit_price: price, quantity: qty,
+                  tax_exempt: delivery, tax_amount, line_total });
+        document.getElementById('m-name').value = '';
+        document.getElementById('m-price').value = '';
+        document.getElementById('m-qty').value = '1';
+        document.getElementById('m-vendor').value = '';
+    }
+
+    function addItem(item) {
+        bbItems.push(item);
+        renderItemList();
+        updateRamsInvolved();
+    }
+
+    function removeItem(idx) {
+        bbItems.splice(idx, 1);
+        renderItemList();
+        updateRamsInvolved();
+    }
+
+    function renderItemList() {
+        const list = document.getElementById('bb-item-list');
+        document.getElementById('item-count').textContent = `(${bbItems.length})`;
+        if (!bbItems.length) {
+            list.innerHTML = '<div class="bb-empty-items">Add items using the URL scraper or manual entry →</div>';
+            document.getElementById('ri-section').style.display = 'none';
+            document.getElementById('btn-export').disabled = true;
+            return;
+        }
+        list.innerHTML = '';
+        bbItems.forEach((item, idx) => {
+            const el = document.createElement('div');
+            el.className = 'bb-item';
+            el.innerHTML = `
+                <div class="bb-item-info">
+                    <div class="bb-item-name">${esc(item.name)}</div>
+                    <div class="bb-item-meta">${esc(item.vendor)}${item.url ? ` · <a href="${esc(item.url)}" target="_blank" style="color:var(--gold);text-decoration:none">link ↗</a>` : ''} · qty ${item.quantity}</div>
+                    <div class="bb-item-tax ${item.tax_exempt ? '' : 'taxable'}">${item.tax_exempt ? '✓ Tax exempt (delivered)' : `+ $${item.tax_amount.toFixed(2)} tax (pickup)`}</div>
+                </div>
+                <div class="bb-item-price">$${item.line_total.toFixed(2)}</div>
+                <button class="btn-rm-item" onclick="removeItem(${idx})">✕</button>
+            `;
+            list.appendChild(el);
+        });
+        document.getElementById('ri-section').style.display = 'block';
+        document.getElementById('btn-export').disabled = false;
+    }
+
+    function updateRamsInvolved() {
+        const total = bbItems.reduce((s, i) => s + i.line_total, 0);
+        document.getElementById('ri-amount').textContent = `$${total.toFixed(2)}`;
+        document.getElementById('ri-total').textContent  = `$${total.toFixed(2)}`;
+
+        // Update attendance field from input
+        const att = document.getElementById('bb-attendance').value;
+        if (att) document.getElementById('ri-attendance').textContent = att + ' people';
+
+        // Rebuild line items table
+        const tbody = document.getElementById('ri-items-body');
+        tbody.innerHTML = '';
+        bbItems.forEach((item, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${idx + 1}</td>
+                <td>${esc(item.name.slice(0,40))}</td>
+                <td class="vendor">${esc(item.vendor)}</td>
+                <td>${item.quantity}</td>
+                <td class="price">$${item.unit_price.toFixed(2)}</td>
+                <td class="price">$${item.line_total.toFixed(2)}</td>
+                <td class="${item.tax_exempt ? 'tax-ex' : 'tax-add'}">${item.tax_exempt ? 'Exempt' : '+tax'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // If there are any tax lines, add them as separate rows
+        bbItems.forEach((item, idx) => {
+            if (!item.tax_exempt && item.tax_amount > 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${idx + 1}t</td>
+                    <td style="color:var(--amber)">Tax for item ${idx+1} (NYC 8.875%)</td>
+                    <td class="vendor">—</td>
+                    <td>1</td>
+                    <td class="price" style="color:var(--amber)">$${item.tax_amount.toFixed(2)}</td>
+                    <td class="price" style="color:var(--amber)">$${item.tax_amount.toFixed(2)}</td>
+                    <td class="tax-add">Taxable</td>
+                `;
+                tbody.appendChild(tr);
+            }
+        });
+    }
+
+    // COMPLIANCE CHECK
+    async function runCompliance() {
+        const attendance    = parseInt(document.getElementById('bb-attendance').value) || 0;
+        const event_type    = document.getElementById('bb-event-type').value;
+        const food_delivery = document.getElementById('bb-food-delivery').checked;
+        const performer     = document.getElementById('bb-performer').checked;
+        const alcohol       = document.getElementById('bb-alcohol').checked;
+        const food_total    = parseFloat(document.getElementById('bb-food-total').value) || 0;
+
+        if (attendance) document.getElementById('ri-attendance').textContent = attendance + ' people';
+
+        try {
+            const res = await fetch('/api/budget/compliance', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    event_type, attendance, has_food_delivery: food_delivery,
+                    food_order_total: food_total, has_performer: performer,
+                    has_alcohol: alcohol, event_date: EDATE
+                })
+            });
+            const data = await res.json();
+            renderFlags(data.flags || [], data.auto_items || []);
+        } catch(e) {
+            document.getElementById('compliance-flags').innerHTML =
+                '<div class="flag-item warning"><span class="flag-icon">⚠️</span>Could not run compliance check.</div>';
+        }
+    }
+
+    function renderFlags(flags, autoItems) {
+        const el = document.getElementById('compliance-flags');
+        if (!flags.length) { el.innerHTML = '<div class="flag-item info"><span class="flag-icon">✅</span>No compliance issues found.</div>'; return; }
+        el.innerHTML = flags.map(f => {
+            const icon = f.severity === 'required' ? '🔴' : f.severity === 'warning' ? '⚠️' : 'ℹ️';
+            return `<div class="flag-item ${f.severity === 'required' ? 'required' : f.severity === 'warning' ? 'warning' : 'info'}">
+                <span class="flag-icon">${icon}</span><span>${f.message}</span></div>`;
+        }).join('');
+
+        // Auto-add required items (security, tip)
+        autoItems.forEach(item => {
+            const exists = bbItems.some(i => i.name === item.description);
+            if (!exists) {
+                addItem({
+                    name: item.description, vendor: item.vendor || 'Fordham',
+                    url: '', unit_price: item.unit_price, quantity: item.quantity,
+                    tax_exempt: true, tax_amount: 0,
+                    line_total: Math.round(item.unit_price * item.quantity * 100) / 100
                 });
-        }
+            }
+        });
+        if (autoItems.length) setStatus(`${autoItems.length} required item(s) auto-added`, 'ok');
+    }
 
-        // ── BUDGET ────────────────────────────────────────────────────────────
-        function setBudget() {
-            const amount = parseFloat(document.getElementById('b-input').value);
-            const msg = document.getElementById('b-msg');
-            if (!amount || amount <= 0) { msg.textContent = 'Enter a valid amount.'; msg.style.color = 'var(--red)'; return; }
-            fetch('/api/event/' + EID + '/budget', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount })
-            }).then(r => r.json()).then(data => {
-                if (data.success) {
-                    msg.textContent = `✅ Budget set to $${amount.toFixed(2)}`;
-                    msg.style.color = 'var(--green)';
-                    updateBudget(data.summary);
-                    setTimeout(() => msg.textContent = '', 3000);
-                }
-            }).catch(() => { msg.textContent = 'Error.'; msg.style.color = 'var(--red)'; });
-        }
+    // COPY FIELD
+    function copyField(el) {
+        if (el.querySelector('textarea')) return; // don't copy editable fields
+        const value = el.querySelector('.ri-field-value')?.textContent;
+        if (!value) return;
+        navigator.clipboard.writeText(value).then(() => {
+            const hint = el.querySelector('.ri-copy-hint');
+            hint.textContent = '✓ Copied!'; hint.classList.add('ri-copied');
+            setTimeout(() => { hint.textContent = 'click to copy'; hint.classList.remove('ri-copied'); }, 2000);
+        });
+    }
 
-        function logExpense() {
-            const amount = parseFloat(document.getElementById('e-amount').value);
-            const cat = document.getElementById('e-cat').value;
-            const desc = document.getElementById('e-desc').value.trim();
-            const msg = document.getElementById('e-msg');
-            if (!amount || amount <= 0) { msg.textContent = 'Enter amount.'; msg.style.color = 'var(--red)'; return; }
-            if (!cat) { msg.textContent = 'Select category.'; msg.style.color = 'var(--red)'; return; }
-            if (!desc) { msg.textContent = 'Add description.'; msg.style.color = 'var(--red)'; return; }
-            fetch('/api/event/' + EID + '/expense', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount, category: cat, description: desc })
-            }).then(r => r.json()).then(data => {
-                if (data.success) {
-                    msg.textContent = `✅ $${amount.toFixed(2)} logged`;
-                    msg.style.color = 'var(--green)';
-                    document.getElementById('e-amount').value = '';
-                    document.getElementById('e-cat').value = '';
-                    document.getElementById('e-desc').value = '';
-                    addTxRow({ amount, category: cat, description: desc });
-                    updateBudget(data.summary);
-                    setTimeout(() => msg.textContent = '', 3000);
-                }
-            }).catch(() => { msg.textContent = 'Error.'; msg.style.color = 'var(--red)'; });
-        }
+    // CSV EXPORT
+    function exportCSV() {
+        if (!bbItems.length) return;
+        const eventName = ETITLE;
+        const total = bbItems.reduce((s, i) => s + i.line_total, 0);
+        const mission = document.getElementById('ri-mission').value || '';
+        const benefit = document.getElementById('ri-benefit').value || '';
+        const attendance = document.getElementById('bb-attendance').value || '';
 
-        function updateBudget(s) {
-            document.getElementById('b-remaining').textContent = s.remaining.toFixed(2);
-            document.getElementById('b-sub').textContent = `of $${s.budget.toFixed(2)} total budget`;
-            document.getElementById('b-bar').style.width = s.percent_used + '%';
-            document.getElementById('b-spent-lbl').textContent = `$${s.spent.toFixed(2)} spent`;
-            document.getElementById('b-pct-lbl').textContent = `${s.percent_used}% used`;
-            document.getElementById('b-total').textContent = `$${s.budget.toFixed(2)}`;
-            document.getElementById('b-spent').textContent = `$${s.spent.toFixed(2)}`;
-            document.getElementById('b-rem2').textContent = `$${s.remaining.toFixed(2)}`;
-        }
+        let csv = 'SABC Budget Packet — ' + eventName + '\n';
+        csv += 'Event Date:,' + EDATE + '\n';
+        csv += 'Expected Attendance:,' + attendance + '\n';
+        csv += 'Mission:,' + mission.replace(/,/g,';') + '\n';
+        csv += 'Community Benefit:,' + benefit.replace(/,/g,';') + '\n';
+        csv += 'Total Amount Requested:,$' + total.toFixed(2) + '\n\n';
+        csv += 'Line #,Item Description,Vendor,Product URL,Quantity,Unit Price,Line Total,Tax Status\n';
 
-        function addTxRow(exp) {
-            const c = document.getElementById('b-tx');
-            const empty = c.querySelector('div[style*="text-align"]');
-            if (empty) empty.remove();
-            const row = document.createElement('div');
-            row.className = 'tx-row';
-            row.innerHTML = `
-    <div class="tx-icon">${CAT_ICONS[exp.category] || '📌'}</div>
-    <div>
-      <div class="tx-desc">${exp.description}</div>
-      <div class="tx-meta">${exp.category} · ${new Date().toISOString().slice(0, 10)}</div>
-    </div>
-    <div class="tx-amt">-$${parseFloat(exp.amount).toFixed(2)}</div>
-  `;
-            c.prepend(row);
-        }
-    </script>
+        let lineNum = 1;
+        bbItems.forEach(item => {
+            csv += `${lineNum},` +
+                `"${item.name.replace(/"/g,"''")}"` + ',' +
+                `"${item.vendor}"` + ',' +
+                `"${item.url}"` + ',' +
+                item.quantity + ',' +
+                '$' + item.unit_price.toFixed(2) + ',' +
+                '$' + (item.unit_price * item.quantity).toFixed(2) + ',' +
+                (item.tax_exempt ? 'Tax Exempt (Delivered to Fordham)' : 'Taxable (Pickup)') + '\n';
+            lineNum++;
+            if (!item.tax_exempt && item.tax_amount > 0) {
+                csv += `${lineNum}t,"Tax for item ${lineNum-1} (NYC 8.875%)",-,-,1,$${item.tax_amount.toFixed(2)},$${item.tax_amount.toFixed(2)},Taxable\n`;
+                lineNum++;
+            }
+        });
+
+        csv += '\nTotal:,,,,,$' + total.toFixed(2) + '\n';
+
+        const blob = new Blob([csv], {type: 'text/csv'});
+        const a    = document.createElement('a');
+        a.href     = URL.createObjectURL(blob);
+        a.download = `SABC_Budget_${eventName.replace(/\s+/g,'_')}_${EDATE}.csv`;
+        a.click();
+    }
+
+    // Attendance input live update
+    document.getElementById('bb-attendance').addEventListener('input', updateRamsInvolved);
+
+    function esc(s) {
+        if (typeof s !== 'string') s = String(s || '');
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+</script>
 </body>
-
 </html>

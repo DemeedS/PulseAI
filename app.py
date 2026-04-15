@@ -458,3 +458,29 @@ if __name__ == "__main__":
     print(f"🚀 PulseAI starting on http://localhost:{port}")
     print(f"📅 Today: {datetime.now().strftime('%A, %B %d, %Y')}")
     socketio.run(app, host="0.0.0.0", port=port, debug=False)
+
+
+@app.route("/api/budget/scrape", methods=["POST"])
+def scrape_budget_item_route():
+    data     = request.get_json() or {}
+    url      = data.get("url", "").strip()
+    delivery = data.get("delivery_to_fordham", True)
+    if not url:
+        return jsonify({"success": False, "error": "URL required"}), 400
+    result = tools.impl_scrape_budget_item(url, delivery)
+    return jsonify(result)
+
+@app.route("/api/budget/compliance", methods=["POST"])
+def check_sabc_compliance_route():
+    data = request.get_json() or {}
+    result = tools.impl_check_sabc_compliance(
+        event_type       = data.get("event_type", "social"),
+        attendance       = int(data.get("attendance", 0)),
+        has_food_delivery= bool(data.get("has_food_delivery", False)),
+        food_order_total = float(data.get("food_order_total", 0)),
+        has_performer    = bool(data.get("has_performer", False)),
+        has_alcohol      = bool(data.get("has_alcohol", False)),
+        event_date       = data.get("event_date"),
+        is_pizza_order   = bool(data.get("is_pizza_order", False))
+    )
+    return jsonify(result)
