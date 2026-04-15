@@ -4,21 +4,16 @@ import psycopg2.extras
 from dotenv import load_dotenv
 
 load_dotenv()
-
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 
 def get_db():
-    """
-    Get a PostgreSQL database connection.
-    RealDictCursor makes rows behave like dicts — same as sqlite3.Row.
-    """
     conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
     return conn
 
 
 def init_db():
-    """Create all tables. Safe to call multiple times."""
+    """Create all tables and migrate new columns. Safe to call multiple times."""
     conn = get_db()
     c = conn.cursor()
 
@@ -31,9 +26,23 @@ def init_db():
             location TEXT NOT NULL,
             description TEXT,
             created_at TEXT DEFAULT (NOW()::TEXT),
-            status TEXT DEFAULT 'active'
+            status TEXT DEFAULT 'draft',
+            notification_message TEXT,
+            draft_reminders TEXT
         )
     """)
+
+    # Migrate existing tables — add new columns if they don't exist yet
+    migrations = [
+        "ALTER TABLE events ADD COLUMN IF NOT EXISTS notification_message TEXT",
+        "ALTER TABLE events ADD COLUMN IF NOT EXISTS draft_reminders TEXT",
+        "ALTER TABLE events ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'draft'",
+    ]
+    for sql in migrations:
+        try:
+            c.execute(sql)
+        except Exception:
+            conn.rollback()
 
     c.execute("""
         CREATE TABLE IF NOT EXISTS members (
@@ -43,7 +52,6 @@ def init_db():
             role TEXT DEFAULT 'member'
         )
     """)
-
     c.execute("""
         CREATE TABLE IF NOT EXISTS rsvps (
             id SERIAL PRIMARY KEY,
@@ -56,7 +64,6 @@ def init_db():
             UNIQUE(event_id, member_id)
         )
     """)
-
     c.execute("""
         CREATE TABLE IF NOT EXISTS notifications (
             id SERIAL PRIMARY KEY,
@@ -66,7 +73,6 @@ def init_db():
             sent_at TEXT DEFAULT (NOW()::TEXT)
         )
     """)
-
     c.execute("""
         CREATE TABLE IF NOT EXISTS scheduled_jobs (
             id SERIAL PRIMARY KEY,
@@ -77,7 +83,6 @@ def init_db():
             status TEXT DEFAULT 'pending'
         )
     """)
-
     c.execute("""
         CREATE TABLE IF NOT EXISTS expenses (
             id SERIAL PRIMARY KEY,
@@ -89,7 +94,6 @@ def init_db():
             logged_at TEXT DEFAULT (NOW()::TEXT)
         )
     """)
-
     c.execute("""
         CREATE TABLE IF NOT EXISTS club_settings (
             id SERIAL PRIMARY KEY,
@@ -97,7 +101,6 @@ def init_db():
             budget REAL DEFAULT 0.00
         )
     """)
-
     c.execute("""
         CREATE TABLE IF NOT EXISTS event_expenses (
             id SERIAL PRIMARY KEY,
@@ -109,7 +112,6 @@ def init_db():
             FOREIGN KEY (event_id) REFERENCES events(id)
         )
     """)
-
     c.execute("""
         CREATE TABLE IF NOT EXISTS event_budgets (
             id SERIAL PRIMARY KEY,
@@ -125,72 +127,26 @@ def init_db():
 
 
 def seed_demo_members():
-    """Seed fake club members for demo."""
     conn = get_db()
     c = conn.cursor()
-
-    members = [
-        ("Demian Vial", "dsv@fordham.edu", "member"),
-    ]
-
-    for name, email, role in members:
-        c.execute("""
-            INSERT INTO members (name, email, role)
-            VALUES (%s, %s, %s)
-            ON CONFLICT (email) DO NOTHING
-        """, (name, email, role))
-
+    for name, email, role in [("Demian Vial", "dsv@fordham.edu", "member")]:
+        c.execute("INSERT INTO members (name, email, role) VALUES (%s, %s, %s) ON CONFLICT (email) DO NOTHING",
+                  (name, email, role))
     conn.commit()
     conn.close()
     print("✅ Demo members seeded")
 
 
-def seed_demo_rsvp_data():
-    """Pre-populate RSVPs so the panel looks alive before the demo runs."""
-    conn = get_db()
-    c = conn.cursor()
-
-    c.execute("SELECT COUNT(*) FROM rsvps")
-    if c.fetchone()["count"] > 0:
-        conn.close()
-        return
-
-    c.execute("""
-        INSERT INTO events (id, title, date, time, location)
-        VALUES (999, 'Kickoff Meeting (Demo)', '2026-03-20', '18:00', 'Keating 1st Floor')
-        ON CONFLICT (id) DO NOTHING
-    """)
-
-    rsvp_data = [
-        (999, 1, 'attending'),
-        (999, 2, 'attending'),
-        (999, 3, 'not_attending'),
-        (999, 4, 'attending'),
-        (999, 5, 'attending'),
-        (999, 6, 'not_attending'),
-    ]
-    for event_id, member_id, status in rsvp_data:
-        c.execute("""
-            INSERT INTO rsvps (event_id, member_id, status)
-            VALUES (%s, %s, %s)
-            ON CONFLICT (event_id, member_id) DO NOTHING
-        """, (event_id, member_id, status))
-
-    conn.commit()
-    conn.close()
-    print("✅ Demo RSVP data seeded")
-
-
 # ── EVENT FUNCTIONS ──────────────────────────────────────────────────
 
-def create_event(title, date, time, location, description=""):
+def create_event(title, date, time, location, description="", status="draft"):
+    """Create event — defaults to 'draft' so agent never auto-publishes."""
     conn = get_db()
     c = conn.cursor()
     c.execute("""
-        INSERT INTO events (title, date, time, location, description)
-        VALUES (%s, %s, %s, %s, %s)
-        RETURNING id
-    """, (title, date, time, location, description))
+        INSERT INTO events (title, date, time, location, description, status)
+        VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+    """, (title, date, time, location, description, status))
     event_id = c.fetchone()["id"]
     conn.commit()
     conn.close()
@@ -215,6 +171,55 @@ def get_event(event_id):
     return dict(row) if row else None
 
 
+def delete_event(event_id):
+    """Delete an event and all associated records."""
+    conn = get_db()
+    c = conn.cursor()
+    for table in ["rsvps", "scheduled_jobs", "notifications", "event_expenses", "event_budgets"]:
+        c.execute(f"DELETE FROM {table} WHERE event_id = %s", (event_id,))
+    c.execute("DELETE FROM events WHERE id = %s", (event_id,))
+    conn.commit()
+    conn.close()
+
+
+def publish_event(event_id):
+    """Change event status to 'active' (published)."""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("UPDATE events SET status = 'active' WHERE id = %s", (event_id,))
+    conn.commit()
+    conn.close()
+
+
+def save_draft_review_data(event_id, notification_message, draft_reminders_json):
+    """Store agent-suggested notification message and reminders on the draft."""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("""
+        UPDATE events SET notification_message = %s, draft_reminders = %s WHERE id = %s
+    """, (notification_message, draft_reminders_json, event_id))
+    conn.commit()
+    conn.close()
+
+
+def update_event_details(event_id, title, date, time, location, description):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("""
+        UPDATE events SET title=%s, date=%s, time=%s, location=%s, description=%s WHERE id=%s
+    """, (title, date, time, location, description, event_id))
+    conn.commit()
+    conn.close()
+
+
+def update_event_flyer(event_id, flyer_path):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("UPDATE events SET description = %s WHERE id = %s", (flyer_path, event_id))
+    conn.commit()
+    conn.close()
+
+
 # ── MEMBER FUNCTIONS ─────────────────────────────────────────────────
 
 def get_all_members():
@@ -227,15 +232,11 @@ def get_all_members():
 
 
 def add_member(name, email, role="member"):
-    """Add a new member to the club."""
     conn = get_db()
     c = conn.cursor()
     try:
-        c.execute("""
-            INSERT INTO members (name, email, role)
-            VALUES (%s, %s, %s)
-            RETURNING id
-        """, (name, email, role))
+        c.execute("INSERT INTO members (name, email, role) VALUES (%s, %s, %s) RETURNING id",
+                  (name, email, role))
         member_id = c.fetchone()["id"]
         conn.commit()
         conn.close()
@@ -247,7 +248,6 @@ def add_member(name, email, role="member"):
 
 
 def remove_member(member_id):
-    """Remove a member from the club."""
     conn = get_db()
     c = conn.cursor()
     c.execute("DELETE FROM members WHERE id = %s", (member_id,))
@@ -256,7 +256,6 @@ def remove_member(member_id):
 
 
 def get_member_by_email(email):
-    """Look up a member by email for RSVP submission."""
     conn = get_db()
     c = conn.cursor()
     c.execute("SELECT * FROM members WHERE email = %s", (email,))
@@ -268,15 +267,11 @@ def get_member_by_email(email):
 # ── RSVP FUNCTIONS ───────────────────────────────────────────────────
 
 def save_rsvp(event_id, member_id, status):
-    """Save or UPDATE rsvp — member can change their response."""
     conn = get_db()
     c = conn.cursor()
     c.execute("""
-        INSERT INTO rsvps (event_id, member_id, status)
-        VALUES (%s, %s, %s)
-        ON CONFLICT (event_id, member_id) DO UPDATE SET
-            status = EXCLUDED.status,
-            responded_at = NOW()::TEXT
+        INSERT INTO rsvps (event_id, member_id, status) VALUES (%s, %s, %s)
+        ON CONFLICT (event_id, member_id) DO UPDATE SET status = EXCLUDED.status, responded_at = NOW()::TEXT
     """, (event_id, member_id, status))
     conn.commit()
     conn.close()
@@ -286,11 +281,9 @@ def get_rsvps_for_event(event_id):
     conn = get_db()
     c = conn.cursor()
     c.execute("""
-        SELECT r.status, m.name, m.email
-        FROM rsvps r
+        SELECT r.status, m.name, m.email FROM rsvps r
         JOIN members m ON r.member_id = m.id
-        WHERE r.event_id = %s
-        ORDER BY r.responded_at DESC
+        WHERE r.event_id = %s ORDER BY r.responded_at DESC
     """, (event_id,))
     rows = c.fetchall()
     conn.close()
@@ -298,15 +291,9 @@ def get_rsvps_for_event(event_id):
 
 
 def get_rsvp_counts(event_id):
-    """Get attending/not attending counts for an event."""
     conn = get_db()
     c = conn.cursor()
-    c.execute("""
-        SELECT status, COUNT(*) as count
-        FROM rsvps
-        WHERE event_id = %s
-        GROUP BY status
-    """, (event_id,))
+    c.execute("SELECT status, COUNT(*) as count FROM rsvps WHERE event_id = %s GROUP BY status", (event_id,))
     rows = c.fetchall()
     conn.close()
     counts = {"attending": 0, "not_attending": 0}
@@ -316,15 +303,11 @@ def get_rsvp_counts(event_id):
 
 
 def get_attending_members(event_id):
-    """Get list of members who said they are attending."""
     conn = get_db()
     c = conn.cursor()
     c.execute("""
-        SELECT m.name, m.email
-        FROM rsvps r
-        JOIN members m ON r.member_id = m.id
-        WHERE r.event_id = %s AND r.status = 'attending'
-        ORDER BY r.responded_at ASC
+        SELECT m.name, m.email FROM rsvps r JOIN members m ON r.member_id = m.id
+        WHERE r.event_id = %s AND r.status = 'attending' ORDER BY r.responded_at ASC
     """, (event_id,))
     rows = c.fetchall()
     conn.close()
@@ -332,13 +315,9 @@ def get_attending_members(event_id):
 
 
 def get_member_rsvp(event_id, member_id):
-    """Check if a specific member already RSVPed."""
     conn = get_db()
     c = conn.cursor()
-    c.execute("""
-        SELECT status FROM rsvps
-        WHERE event_id = %s AND member_id = %s
-    """, (event_id, member_id))
+    c.execute("SELECT status FROM rsvps WHERE event_id = %s AND member_id = %s", (event_id, member_id))
     row = c.fetchone()
     conn.close()
     return row["status"] if row else None
@@ -349,10 +328,8 @@ def get_member_rsvp(event_id, member_id):
 def log_notification(event_id, message, notif_type):
     conn = get_db()
     c = conn.cursor()
-    c.execute("""
-        INSERT INTO notifications (event_id, message, type)
-        VALUES (%s, %s, %s)
-    """, (event_id, message, notif_type))
+    c.execute("INSERT INTO notifications (event_id, message, type) VALUES (%s, %s, %s)",
+              (event_id, message, notif_type))
     conn.commit()
     conn.close()
 
@@ -362,10 +339,8 @@ def log_notification(event_id, message, notif_type):
 def save_scheduled_job(event_id, job_id, fire_at, message):
     conn = get_db()
     c = conn.cursor()
-    c.execute("""
-        INSERT INTO scheduled_jobs (event_id, job_id, fire_at, message)
-        VALUES (%s, %s, %s, %s)
-    """, (event_id, job_id, fire_at, message))
+    c.execute("INSERT INTO scheduled_jobs (event_id, job_id, fire_at, message) VALUES (%s, %s, %s, %s)",
+              (event_id, job_id, fire_at, message))
     conn.commit()
     conn.close()
 
@@ -373,9 +348,7 @@ def save_scheduled_job(event_id, job_id, fire_at, message):
 def mark_job_fired(job_id):
     conn = get_db()
     c = conn.cursor()
-    c.execute("""
-        UPDATE scheduled_jobs SET status = 'fired' WHERE job_id = %s
-    """, (job_id,))
+    c.execute("UPDATE scheduled_jobs SET status = 'fired' WHERE job_id = %s", (job_id,))
     conn.commit()
     conn.close()
 
@@ -389,34 +362,9 @@ def get_scheduled_jobs(event_id):
     return [dict(row) for row in rows]
 
 
-# ── EVENT DETAIL ─────────────────────────────────────────────────────
-
-def update_event_flyer(event_id, flyer_path):
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("""
-        UPDATE events SET description = %s WHERE id = %s
-    """, (flyer_path, event_id))
-    conn.commit()
-    conn.close()
-
-
-def update_event_details(event_id, title, date, time, location, description):
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("""
-        UPDATE events
-        SET title=%s, date=%s, time=%s, location=%s, description=%s
-        WHERE id=%s
-    """, (title, date, time, location, description, event_id))
-    conn.commit()
-    conn.close()
-
-
 # ── TREASURY ─────────────────────────────────────────────────────────
 
 def init_treasury_table():
-    """Tables are now created in init_db — this is a no-op kept for compatibility."""
     pass
 
 
@@ -425,8 +373,7 @@ def log_expense(amount, category, description, event_id=None, club_name="Finance
     c = conn.cursor()
     c.execute("""
         INSERT INTO expenses (club_name, amount, category, description, event_id)
-        VALUES (%s, %s, %s, %s, %s)
-        RETURNING id
+        VALUES (%s, %s, %s, %s, %s) RETURNING id
     """, (club_name, amount, category, description, event_id))
     expense_id = c.fetchone()["id"]
     conn.commit()
@@ -437,11 +384,7 @@ def log_expense(amount, category, description, event_id=None, club_name="Finance
 def get_expenses(club_name="Finance Club"):
     conn = get_db()
     c = conn.cursor()
-    c.execute("""
-        SELECT * FROM expenses
-        WHERE club_name = %s
-        ORDER BY logged_at DESC
-    """, (club_name,))
+    c.execute("SELECT * FROM expenses WHERE club_name = %s ORDER BY logged_at DESC", (club_name,))
     rows = c.fetchall()
     conn.close()
     return [dict(row) for row in rows]
@@ -450,27 +393,17 @@ def get_expenses(club_name="Finance Club"):
 def get_treasury_summary(club_name="Finance Club"):
     conn = get_db()
     c = conn.cursor()
-
-    c.execute("""
-        SELECT COALESCE(SUM(amount), 0) as total_spent
-        FROM expenses WHERE club_name = %s
-    """, (club_name,))
+    c.execute("SELECT COALESCE(SUM(amount), 0) as total_spent FROM expenses WHERE club_name = %s", (club_name,))
     total_spent = c.fetchone()["total_spent"]
-
     c.execute("""
-        SELECT category, SUM(amount) as total
-        FROM expenses WHERE club_name = %s
-        GROUP BY category
-        ORDER BY total DESC
+        SELECT category, SUM(amount) as total FROM expenses WHERE club_name = %s
+        GROUP BY category ORDER BY total DESC
     """, (club_name,))
     by_category = [dict(row) for row in c.fetchall()]
-
     conn.close()
-
     budget = get_budget(club_name)
     return {
-        "budget": budget,
-        "spent": total_spent,
+        "budget": budget, "spent": total_spent,
         "remaining": budget - total_spent,
         "percent_used": round((total_spent / budget) * 100) if budget > 0 else 0,
         "by_category": by_category
@@ -481,8 +414,7 @@ def set_budget(amount, club_name="Finance Club"):
     conn = get_db()
     c = conn.cursor()
     c.execute("""
-        INSERT INTO club_settings (club_name, budget)
-        VALUES (%s, %s)
+        INSERT INTO club_settings (club_name, budget) VALUES (%s, %s)
         ON CONFLICT (club_name) DO UPDATE SET budget = EXCLUDED.budget
     """, (club_name, amount))
     conn.commit()
@@ -502,35 +434,7 @@ def get_budget(club_name="Finance Club"):
         return 0.00
 
 
-def seed_demo_expenses():
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT COUNT(*) FROM expenses")
-    if c.fetchone()["count"] > 0:
-        conn.close()
-        return
-
-    expenses = [
-        ("Finance Club", 85.00,  "Food & Drinks",  "Pizza for September kickoff meeting", None),
-        ("Finance Club", 45.50,  "Supplies",       "Printed materials and folders",       None),
-        ("Finance Club", 120.00, "Speaker",        "Guest speaker honorarium",            None),
-        ("Finance Club", 32.00,  "Food & Drinks",  "Coffee and snacks for study session", None),
-        ("Finance Club", 18.75,  "Supplies",       "Whiteboard markers and paper",        None),
-    ]
-    for exp in expenses:
-        c.execute("""
-            INSERT INTO expenses (club_name, amount, category, description, event_id)
-            VALUES (%s, %s, %s, %s, %s)
-        """, exp)
-    conn.commit()
-    conn.close()
-    print("✅ Demo expenses seeded")
-
-
-# ── EVENT BUDGET ─────────────────────────────────────────────────────
-
 def init_event_budget_table():
-    """Tables are now created in init_db — this is a no-op kept for compatibility."""
     pass
 
 
@@ -538,8 +442,7 @@ def set_event_budget(event_id, amount):
     conn = get_db()
     c = conn.cursor()
     c.execute("""
-        INSERT INTO event_budgets (event_id, budget)
-        VALUES (%s, %s)
+        INSERT INTO event_budgets (event_id, budget) VALUES (%s, %s)
         ON CONFLICT (event_id) DO UPDATE SET budget = EXCLUDED.budget
     """, (event_id, amount))
     conn.commit()
@@ -564,8 +467,7 @@ def log_event_expense(event_id, amount, category, description):
     c = conn.cursor()
     c.execute("""
         INSERT INTO event_expenses (event_id, amount, category, description)
-        VALUES (%s, %s, %s, %s)
-        RETURNING id
+        VALUES (%s, %s, %s, %s) RETURNING id
     """, (event_id, amount, category, description))
     expense_id = c.fetchone()["id"]
     conn.commit()
@@ -576,11 +478,7 @@ def log_event_expense(event_id, amount, category, description):
 def get_event_expenses(event_id):
     conn = get_db()
     c = conn.cursor()
-    c.execute("""
-        SELECT * FROM event_expenses
-        WHERE event_id = %s
-        ORDER BY logged_at DESC
-    """, (event_id,))
+    c.execute("SELECT * FROM event_expenses WHERE event_id = %s ORDER BY logged_at DESC", (event_id,))
     rows = c.fetchall()
     conn.close()
     return [dict(row) for row in rows]
@@ -589,26 +487,17 @@ def get_event_expenses(event_id):
 def get_event_budget_summary(event_id):
     conn = get_db()
     c = conn.cursor()
-
     budget = get_event_budget(event_id)
-
-    c.execute("""
-        SELECT COALESCE(SUM(amount), 0) as total_spent
-        FROM event_expenses WHERE event_id = %s
-    """, (event_id,))
+    c.execute("SELECT COALESCE(SUM(amount), 0) as total_spent FROM event_expenses WHERE event_id = %s", (event_id,))
     total_spent = c.fetchone()["total_spent"]
-
     c.execute("""
-        SELECT category, SUM(amount) as total
-        FROM event_expenses WHERE event_id = %s
-        GROUP BY category ORDER BY total DESC
+        SELECT category, SUM(amount) as total FROM event_expenses
+        WHERE event_id = %s GROUP BY category ORDER BY total DESC
     """, (event_id,))
     by_category = [dict(row) for row in c.fetchall()]
-
     conn.close()
     return {
-        "budget": budget,
-        "spent": total_spent,
+        "budget": budget, "spent": total_spent,
         "remaining": budget - total_spent,
         "percent_used": round((total_spent / budget) * 100) if budget > 0 else 0,
         "by_category": by_category
