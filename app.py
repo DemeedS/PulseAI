@@ -452,14 +452,6 @@ def log_event_expense_api(event_id):
 
 
 # ── MAIN ──────────────────────────────────────────────────────────────
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    print(f"🚀 PulseAI starting on http://localhost:{port}")
-    print(f"📅 Today: {datetime.now().strftime('%A, %B %d, %Y')}")
-    socketio.run(app, host="0.0.0.0", port=port, debug=False)
-
-
 @app.route("/api/budget/scrape", methods=["POST"])
 def scrape_budget_item_route():
     data     = request.get_json() or {}
@@ -484,3 +476,10 @@ def check_sabc_compliance_route():
         is_pizza_order   = bool(data.get("is_pizza_order", False))
     )
     return jsonify(result)
+
+# ── MAIN ─────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    print(f"🚀 PulseAI starting on http://localhost:{port}")
+    print(f"📅 Today: {datetime.now().strftime('%A, %B %d, %Y')}")
+    socketio.run(app, host="0.0.0.0", port=port, debug=False)

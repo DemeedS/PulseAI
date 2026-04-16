@@ -885,35 +885,47 @@
 
     // URL SCRAPE
     async function scrapeItem() {
-        const url = document.getElementById('bb-url').value.trim();
-        if (!url) { setStatus('Enter a product URL first.','err'); return; }
-        const delivery = document.getElementById('bb-delivery').checked;
-        const btn = document.getElementById('btn-scrape');
-        btn.disabled = true; btn.textContent = '⏳ Scraping...';
-        setStatus('Fetching product info...','loading');
-        try {
-            const res = await fetch('/api/budget/scrape', {
-                method: 'POST', headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({url, delivery_to_fordham: delivery})
-            });
-            const data = await res.json();
-            if (!data.success) { setStatus(data.error || 'Could not scrape this page.','err'); return; }
-            const item = data.line_item;
-            addItem({
-                name: item.product_name, vendor: item.vendor, url: item.url,
-                unit_price: item.unit_price, quantity: 1,
-                tax_exempt: item.tax_exempt,
-                tax_amount: item.tax_line ? item.tax_line.amount : 0,
-                line_total: item.line_total
-            });
-            setStatus(`✓ Added: ${item.product_name.slice(0,40)}`, 'ok');
-            document.getElementById('bb-url').value = '';
-        } catch(e) {
-            setStatus('Network error — check your connection.','err');
-        }
-        btn.disabled = false; btn.textContent = '🔍 Scrape Item Info';
-    }
+    const url = document.getElementById('bb-url').value.trim();
+    const btn = document.getElementById('btn-scrape');
+    const delivery = document.getElementById('bb-delivery').checked;
 
+    if (!url) { setStatus('Enter a product URL first.','err'); return; }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Scraping...';
+    setStatus('Fetching product info...','loading');
+
+    try {
+        const res = await fetch('/api/budget/scrape', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({url, delivery_to_fordham: delivery})
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+            setStatus(data.error || 'Could not scrape this page.','err');
+            return;
+        }
+
+        const item = data.line_item;
+        addItem({
+            name: item.product_name, vendor: item.vendor, url: item.url,
+            unit_price: item.unit_price, quantity: 1,
+            tax_exempt: item.tax_exempt,
+            tax_amount: item.tax_line ? item.tax_line.amount : 0,
+            line_total: item.line_total
+        });
+        setStatus(`✓ Added: ${item.product_name.slice(0,40)}`, 'ok');
+        document.getElementById('bb-url').value = '';
+
+    } catch(e) {
+        setStatus('Network error — check your connection.','err');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 Scrape Item Info';
+    }
+}
+        
     function setStatus(msg, type) {
         const el = document.getElementById('scrape-status');
         el.textContent = msg; el.className = 'scrape-status ' + (type || '');
