@@ -279,9 +279,9 @@ def impl_get_rsvp_summary(event_id):
 
 def impl_scrape_budget_item(url: str, delivery_to_fordham: bool = True) -> dict:
     try:
-       scraper_key = os.environ.get("SCRAPERAPI_KEY", "")
-scraper_url = f"http://api.scraperapi.com?api_key={scraper_key}&url={requests.utils.quote(url, safe='')}"
-response = requests.get(scraper_url, timeout=30)
+        scraper_key = os.environ.get("SCRAPERAPI_KEY", "")
+        scraper_url = f"http://api.scraperapi.com?api_key={scraper_key}&url={requests.utils.quote(url, safe='')}"
+        response = requests.get(scraper_url, timeout=30)
 
         product_name = None
         price        = None
