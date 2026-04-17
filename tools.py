@@ -282,6 +282,8 @@ def impl_scrape_budget_item(url: str, delivery_to_fordham: bool = True) -> dict:
         scraper_key = os.environ.get("SCRAPERAPI_KEY", "")
         scraper_url = f"http://api.scraperapi.com?api_key={scraper_key}&url={requests.utils.quote(url, safe='')}"
         response = requests.get(scraper_url, timeout=30)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
 
         product_name = None
         price        = None
